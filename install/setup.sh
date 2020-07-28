@@ -1,4 +1,4 @@
-passwd
+echo 0 | sudo tee /sys/class/leds/led0/brightness > /dev/null
 
 cd /home/pi
 
@@ -6,10 +6,10 @@ sudo apt-get install git -y
 
 git clone https://github.com/ruundii/bthidhub
 
-echo 0 | sudo tee /sys/class/leds/led0/brightness > /dev/null
+sudo echo 0 | sudo tee /sys/class/leds/led0/brightness > /dev/null
 
 echo "bthidhub" | cat > /etc/hostname
-sed -Ei 's/^127\.0\.1\.1.*$/127.0.1.1\tbthidhub/' /etc/hosts
+sudo sed -Ei 's/^127\.0\.1\.1.*$/127.0.1.1\tbthidhub/' /etc/hosts
 
 cd /home/pi/bthidhub/install/on_rpi
 
@@ -42,6 +42,7 @@ sudo pip3 install gbulb
 sudo pip3 install evdev
 sudo pip3 install PyGObject
 
+cd cd /home/pi/bthidhub/install/on_rpi
 git clone https://github.com/ruundii/bluez
 cd /home/pi/bthidhub/install/on_rpi/bluez
 autoreconf -fvi

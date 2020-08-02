@@ -32,7 +32,7 @@ class Agent{
                     $('#modalPopupHeader')[0].innerHTML = "Pair?";
                     $('#modalPopupTextBefore')[0].innerHTML = "Type in the pin code and hit Enter:";
                     $('#modalPopupLargeText')[0].innerHTML = data['pincode'];
-                    $('#modalPopupTextAfter')[0].innerHTML= "Device "+data['device'].split('/')[4]. replace("dev_","").replaceAll("_",":");
+                    $('#modalPopupTextAfter')[0].innerHTML= "Device "+data['device'].split('/')[4]. replace("dev_","").replace(/_/g,":");
                     $('#modalCancelButton').show();
                     $('#modalConfirmButton').hide();
                     $('#modalRejectButton').hide();
@@ -54,7 +54,7 @@ class Agent{
                     $('#modalPopupHeader')[0].innerHTML = "Pair to host?";
                     $('#modalPopupTextBefore')[0].innerHTML = "Confirm you see the same passkey on host:";
                     $('#modalPopupLargeText')[0].innerHTML = data['passkey'];
-                    $('#modalPopupTextAfter')[0].innerHTML= "Device "+data['device'].split('/')[4]. replace("dev_","").replaceAll("_",":");
+                    $('#modalPopupTextAfter')[0].innerHTML= "Device "+data['device'].split('/')[4]. replace("dev_","").replace(/_/g,":");
                     $('#modalCancelButton').hide();
                     $('#modalConfirmButton').show();
                     $('#modalRejectButton').show();
@@ -74,7 +74,7 @@ class Agent{
         if(this.currentDevice==null) return;
 
         $.each(devices, function (i, device) {
-            if (!device.path == this.currentDevice) return;
+            if (!device.path === this.currentDevice) return;
             if(device.paired) {
                 //close
                 this.currentDevice = null;

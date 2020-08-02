@@ -64,6 +64,10 @@ class HIDDevice:
             return
         asyncio.run_coroutine_threadsafe(self.device_registry.bluetooth_devices.send_message(tm, True, False), loop=self.loop)
 
+    async def send_message(self, msg):
+        tm = self.filter.filter_message_from_host(msg)
+        if tm is not None and self.hidraw_file is not None:
+            os.write(self.hidraw_file, tm)
 
     def __eq__(self, other):
         return self.device_id == other.device_id
@@ -106,6 +110,12 @@ class HIDDeviceRegistry:
 
     def set_on_devices_changed_handler(self, handler):
         self.on_devices_changed_handler = handler
+
+    async def send_message_to_devices(self, msg):
+        for device in self.capturing_devices.values():
+            await device.send_message(msg)
+
+
 
     async def __watch_device_changes(self):
         async for changes in awatch('/sys/bus/hid/devices', watcher_cls=DeviceDirWatcher):

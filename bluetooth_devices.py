@@ -153,6 +153,10 @@ class BluetoothDeviceRegistry:
         self.connected_hosts = []
         self.connected_devices = []
         self.on_devices_changed_handler = None
+        self.hid_devices = None
+
+    def set_hid_devices(self, hid_devices):
+        self.hid_devices = hid_devices
 
     def set_on_devices_changed_handler(self, handler):
         self.on_devices_changed_handler = handler
@@ -199,6 +203,9 @@ class BluetoothDeviceRegistry:
 
 
     async def send_message(self, msg, send_to_hosts, is_control_channel):
+        if IGNORE_INPUT_DEVICES and not send_to_hosts and not is_control_channel and self.hid_devices is not None:
+            await self.hid_devices.send_message_to_devices(msg)
+            return
         targets: List[BluetoothDevice] = self.connected_hosts if send_to_hosts else self.connected_devices
         for target in list(targets):
             try:

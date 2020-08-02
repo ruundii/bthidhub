@@ -12,3 +12,5 @@ class MouseMessageFilter(HIDMessageFilter):
         msg = b'\xa1\x03' + msg
         return msg
 
+    def filter_message_from_host(self, msg):
+        return None

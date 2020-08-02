@@ -113,4 +113,4 @@ class A1314MessageFilter(HIDMessageFilter):
         return b'\xa1'+bytes(result_report)
 
     def filter_message_from_host(self, msg):
-        return msg
+        return msg[1:]

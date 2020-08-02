@@ -66,11 +66,11 @@ class Agent{
         else if(data['action'] === 'service_authorised') {
             var instance = M.Modal.getInstance($('#modalPopup'))
             instance.close();
-            this.main.updateListOfDevices();
+            this.main.updateListOfBluetoothDevices();
         }
     }
 
-    devices_updated(devices){
+    bluetoothDevicesUpdated(devices){
         if(this.currentDevice==null) return;
 
         $.each(devices, function (i, device) {

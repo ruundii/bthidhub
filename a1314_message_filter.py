@@ -40,59 +40,57 @@ class A1314MessageFilter(HIDMessageFilter):
     def __init__(self):
         self.is_fn_pressed = False
         self.is_eject_pressed = False
-        self.last_regular_report = bytearray(b'\xa1\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+        self.last_regular_report = bytearray(b'\x01\x00\x00\x00\x00\x00\x00\x00\x00')
 
     def filter_message_to_host(self, msg):
-        if len(msg)<2:
+        if len(msg)<1:
             return None
-        if msg[0] != 0xa1:
-            return msg
         result_report = bytearray(msg)
-        if msg[1] == 0x11:
+        if msg[0] == 0x11:
             result_report = self.last_regular_report
 
             #special key report
-            self.is_fn_pressed = (msg[2] & MODIFIER_MASK_A1314_FN) != 0
+            self.is_fn_pressed = (msg[1] & MODIFIER_MASK_A1314_FN) != 0
 
             old_eject_state = self.is_eject_pressed
-            self.is_eject_pressed = (msg[2] & MODIFIER_MASK_A1314_EJECT) != 0
+            self.is_eject_pressed = (msg[1] & MODIFIER_MASK_A1314_EJECT) != 0
             if(old_eject_state and not self.is_eject_pressed):
                 #eject unpressed - remove delete forward key from report
-                for i in range(4,10):
+                for i in range(3,9):
                     if result_report[i] == KEY_DELETE_FORWARD:
-                        for j in range (i+1,10):
+                        for j in range (i+1,9):
                             result_report[j-1]=result_report[j]
-                        result_report[9]=0
+                        result_report[8]=0
                         break
             if (not old_eject_state and self.is_eject_pressed):
                 # eject pressed
-                for i in range(4,10):
+                for i in range(3,9):
                     if result_report[i] == 0:
                         result_report[i] = KEY_DELETE_FORWARD
                         break
 
-        elif msg[1] == 0x01:
+        elif msg[0] == 0x01:
             #normal key report
-            modifiers = result_report[2]
-            result_report[2] = 0 # reset modifiers
+            modifiers = result_report[1]
+            result_report[1] = 0 # reset modifiers
 
             if(modifiers & MODIFIER_MASK_LEFT_ALT): # left alt is pressed
-                result_report[2] = result_report[2] | MODIFIER_MASK_LEFT_GUI_OR_CMD
+                result_report[1] = result_report[1] | MODIFIER_MASK_LEFT_GUI_OR_CMD
 
             if(modifiers & MODIFIER_MASK_LEFT_GUI_OR_CMD): # left cmd is pressed
-                result_report[2] = result_report[2] | MODIFIER_MASK_LEFT_ALT
+                result_report[1] = result_report[1] | MODIFIER_MASK_LEFT_ALT
 
             if(modifiers & MODIFIER_MASK_A1314_RIGHT_CMD): # right cmd is pressed
-                result_report[2] = result_report[2] | MODIFIER_MASK_RIGHT_ALT
+                result_report[1] = result_report[1] | MODIFIER_MASK_RIGHT_ALT
 
             if(modifiers & MODIFIER_MASK_LEFT_SHIFT): # left shift is pressed
-                result_report[2] = result_report[2] | MODIFIER_MASK_LEFT_SHIFT
+                result_report[1] = result_report[1] | MODIFIER_MASK_LEFT_SHIFT
 
             if(modifiers & MODIFIER_MASK_RIGHT_SHIFT): # right shift is pressed
-                result_report[2] = result_report[2] | MODIFIER_MASK_RIGHT_SHIFT
+                result_report[1] = result_report[1] | MODIFIER_MASK_RIGHT_SHIFT
 
             if(modifiers & MODIFIER_MASK_RIGHT_ALT): # right alt is pressed - send application
-                for i in range(4,10):
+                for i in range(3,9):
                     if result_report[i] == 0:
                         result_report[i] = KEY_APPLICATION
                         break
@@ -100,7 +98,7 @@ class A1314MessageFilter(HIDMessageFilter):
             my_fn_pressed = modifiers & MODIFIER_MASK_LEFT_CONTROL # left control is pressed - behave like fn button
             if my_fn_pressed:
                 #process combinations
-                for i in range(4,10):
+                for i in range(3,9):
                     if result_report[i] == 0:
                         break
                     if result_report[i] in FN_SUBSTITUTES:
@@ -108,11 +106,11 @@ class A1314MessageFilter(HIDMessageFilter):
 
 
         # set the fn state in output report
-        result_report[2] = (result_report[2] | MODIFIER_MASK_LEFT_CONTROL) if self.is_fn_pressed else (
-                    result_report[2] & ~MODIFIER_MASK_LEFT_CONTROL)
+        result_report[1] = (result_report[1] | MODIFIER_MASK_LEFT_CONTROL) if self.is_fn_pressed else (
+                    result_report[1] & ~MODIFIER_MASK_LEFT_CONTROL)
 
         self.last_regular_report = result_report
-        return bytes(result_report)
+        return b'\xa1'+bytes(result_report)
 
     def filter_message_from_host(self, msg):
         return msg

@@ -3,13 +3,13 @@
 import evdev
 import os
 import asyncio
-from device import *
+from bluetooth_devices import *
 
 mouse_raw_device = '/dev/hidraw4'
 mouse_event_device = '/dev/input/event18'
 
 class Mouse:
-    def __init__(self, loop: asyncio.AbstractEventLoop, device_registry: DeviceRegistry):
+    def __init__(self, loop: asyncio.AbstractEventLoop, device_registry: BluetoothDeviceRegistry):
         return
         self.dev = evdev.InputDevice(mouse_event_device)
         self.hidraw = os.open(mouse_raw_device, os.O_RDWR | os.O_NONBLOCK)

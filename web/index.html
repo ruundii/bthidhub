@@ -33,15 +33,15 @@
     <div class="row">
         <div class="col s12" >
             <ul class="tabs">
-                <li class="tab col s4 m3 l2 teal lighten-2"  ><a href="#connectedDevices">HID devices</a></li>
-                <li class="tab col s4 m3 l2 teal lighten-2"><a href="#pairDevices">Bluetooth devices</a></li>
+                <li class="tab col s4 m3 l2 teal lighten-2"  ><a href="#hidDevices">HID devices</a></li>
+                <li class="tab col s4 m3 l2 teal lighten-2"><a href="#bluetoothDevices">Bluetooth devices</a></li>
             </ul>
         </div>
-        <div id="connectedDevices" class="col s12">
+        <div id="hidDevices" class="col s12">
             <div class="section">
                 <h5>Connected HID devices</h5>
                 <div class="fixed-action-btn">
-                    <a class="waves-effect waves-light btn-floating" id="refreshConnectedDevices"><i class="material-icons right">refresh</i>Refresh</a>
+                    <a class="waves-effect waves-light btn-floating" id="refreshHIDDevices"><i class="material-icons right">refresh</i>Refresh</a>
                 </div>
                 <form action="#">
                     <table>
@@ -50,12 +50,12 @@
                             <th>Capture</th>
                             <th>Report Filter</th>
                         </thead>
-                        <tbody id="connectedDevicesList"></tbody>
+                        <tbody id="hidDevicesList"></tbody>
                     </table>
                 </form>
             </div>
         </div>
-        <div id="pairDevices" class="col s12">
+        <div id="bluetoothDevices" class="col s12">
             <div class="section">
                 <h5>Pair devices</h5>
                 <a class="waves-effect waves-light btn" id="startScanningButton"><i class="material-icons left">bluetooth_searching</i>Start Scanning</a>
@@ -68,7 +68,7 @@
                         <th>Address</th>
                         <th></th>
                     </thead>
-                    <tbody id="pairDevicesList"></tbody>
+                    <tbody id="bluetoothDevicesList"></tbody>
                 </table>
 
             </div>

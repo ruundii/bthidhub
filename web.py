@@ -3,18 +3,22 @@
 from aiohttp import web,WSMessage
 from password import *
 import json
-from machine_devices import *
+from hid_devices import *
+from bluetooth_devices import *
 import asyncio
 import concurrent.futures
 
 
 class Web:
-    def __init__(self, loop: asyncio.AbstractEventLoop, adapter):
+    def __init__(self, loop: asyncio.AbstractEventLoop, adapter, bluetooth_devices:BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):
         self.loop = loop
         self.adapter = adapter
         self.adapter.set_on_agent_action_handler(self.on_agent_action)
         self.adapter.set_on_interface_changed_handler(self.on_adapter_interface_changed)
-        self.machine_devices = MachineDevices()
+        self.hid_devices = hid_devices
+        self.hid_devices.set_on_devices_changed_handler(self.on_hid_devices_change)
+        self.bluetooth_devices = bluetooth_devices
+        self.bluetooth_devices.set_on_devices_changed_handler(self.on_bluetooth_devices_change)
         self.app = web.Application()
         self.app.router.add_route('*', '/', self.root_handler)
         self.app.router.add_route('POST', '/changepassword', self.change_password_handler)
@@ -34,6 +38,14 @@ class Web:
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         #web.run_app(self.app)
         asyncio.run_coroutine_threadsafe(self.start_server(), loop=self.loop)
+
+    def on_hid_devices_change(self):
+        for ws in self.ws:
+            asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'hid_devices_updated'}), loop=self.loop)
+
+    def on_bluetooth_devices_change(self):
+        for ws in self.ws:
+            asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'bt_devices_updated'}), loop=self.loop)
 
     async def start_server(self):
         self.runner = web.AppRunner(self.app)
@@ -55,20 +67,20 @@ class Web:
         return web.Response(text="Password successfully changed")
 
     async def get_hid_devices_handler(self, request):
-        return web.Response(text=json.dumps(self.machine_devices.get_hid_devices_with_config()))
+        return web.Response(text=json.dumps(self.hid_devices.get_hid_devices_with_config()))
 
     async def set_device_capture(self, request):
         data = await request.post()
         device_id = data['device_id']
         capture_state = data['capture'].lower() == 'true'
-        self.machine_devices.set_device_capture(device_id, capture_state)
+        self.hid_devices.set_device_capture(device_id, capture_state)
         return web.Response()
 
     async def set_device_filter(self, request):
         data = await request.post()
         device_id = data['device_id']
         filter = data['filter']
-        self.machine_devices.set_device_filter(device_id, filter)
+        self.hid_devices.set_device_filter(device_id, filter)
         return web.Response()
 
     async def start_scanning(self, request):
@@ -109,7 +121,7 @@ class Web:
 
     def on_adapter_interface_changed(self):
         for ws in self.ws:
-            asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'devices_updated'}), loop=self.loop)
+            asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'bt_devices_updated'}), loop=self.loop)
 
     async def websocket_handler(self, request):
         ws = web.WebSocketResponse()

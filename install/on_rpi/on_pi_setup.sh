@@ -35,6 +35,7 @@ sudo pip3 install asyncio_glib
 sudo pip3 install evdev
 sudo pip3 install PyGObject
 sudo pip3 install aiohttp
+sudo pip3 install watchgod
 
 cd cd /home/pi/bthidhub/install/on_rpi
 git clone https://github.com/ruundii/bluez

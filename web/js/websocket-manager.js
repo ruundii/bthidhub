@@ -41,8 +41,11 @@ class WebSocketManager{
                 else if(msg['msg'] === 'agent_action'){
                     that.agent.action_triggered(msg['data']);
                 }
-                else if(msg['msg'] === 'devices_updated'){
-                    that.main.updateListOfDevices();
+                else if(msg['msg'] === 'bt_devices_updated'){
+                    that.main.updateListOfBluetoothDevices();
+                }
+                else if(msg['msg'] === 'hid_devices_updated'){
+                    that.main.updateHIDDevices();
                 }
                 else {
                 }

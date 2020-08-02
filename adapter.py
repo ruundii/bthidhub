@@ -3,7 +3,8 @@
 from dasbus.connection import SystemMessageBus
 from agent import Agent
 import dasbus.typing as dt
-from device import *
+from bluetooth_devices import *
+from hid_devices import *
 from mouse import *
 from web import Web
 from datetime import datetime, timedelta
@@ -19,11 +20,12 @@ DEVICE_NAME = 'Bluetooth HID Hub - Ubuntu'
 UUID = '00001124-0000-1000-8000-00805f9b34fb'
 
 class BluetoothAdapter:
-    def __init__(self, bus:SystemMessageBus, loop: asyncio.AbstractEventLoop):
+    def __init__(self, bus:SystemMessageBus, loop: asyncio.AbstractEventLoop, bluetooth_devices:BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):
         self.bus = bus
         self.loop = loop
-        self.device_registry = DeviceRegistry(bus, loop)
-        self.mouse = Mouse(self.loop, self.device_registry)
+        self.bluetooth_devices = bluetooth_devices
+        self.hid_devices = hid_devices
+        self.mouse = Mouse(self.loop, self.bluetooth_devices)
         self.agent_published = False
         self.agent = None
         self.om_proxy_initialised = False
@@ -92,8 +94,8 @@ class BluetoothAdapter:
             await asyncio.sleep(2)
 
         self.alias = DEVICE_NAME
-        self.device_registry.remove_devices()
-        self.device_registry.add_devices()
+        self.bluetooth_devices.remove_devices()
+        self.bluetooth_devices.add_devices()
         self.initialising_adapter = False
 
 
@@ -106,20 +108,20 @@ class BluetoothAdapter:
             self.wait_till_adapter_present_then_init_sync()
 
         elif INPUT_HOST_INTERFACE in interfaces:
-            self.device_registry.add_device(obj_name, True)
+            self.bluetooth_devices.add_device(obj_name, True)
 
         elif INPUT_DEVICE_INTERFACE in interfaces:
-            self.device_registry.add_device(obj_name, False)
+            self.bluetooth_devices.add_device(obj_name, False)
 
 
     def interfaces_removed(self, obj_name, interfaces):
         if(obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
             self.adapter = None
-            self.device_registry.remove_devices()
+            self.bluetooth_devices.remove_devices()
             print("Bluetooth adapter removed. Stopping")
             asyncio.run_coroutine_threadsafe(self.init(), loop=self.loop)
         elif INPUT_HOST_INTERFACE in interfaces or  INPUT_DEVICE_INTERFACE in interfaces:
-            self.device_registry.remove_device(obj_name)
+            self.bluetooth_devices.remove_device(obj_name)
         self.on_interface_changed()
 
 

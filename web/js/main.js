@@ -25,15 +25,15 @@ class Main{
 
         $(document).on('submit', '#changePasswordForm',  e => {that.changePassword();return false;});
         $('.fixed-action-btn').floatingActionButton();
-        $('#refreshConnectedDevices').on('click', e => {that.initWiredDevices();});
+        $('#refreshHIDDevices').on('click', e => {that.updateHIDDevices();});
         $('.tabs').tabs();
-        this.initWiredDevices();
-        this.updateListOfDevices();
+        this.updateHIDDevices();
+        this.updateListOfBluetoothDevices();
         this.agent = new Agent(this);
         this.webSocketManager = new WebSocketManager(this.agent, this);
     }
 
-    initWiredDevices(){
+    updateHIDDevices(){
         var that = this;
         $.ajax({
             type: 'GET',
@@ -55,7 +55,7 @@ class Main{
                     if(device.capture) captureText = ' checked="checked"'
                     trHTML += '<tr><td>' + device.name + '</td><td class="capture-check"><p><label><input name="captureCheckbox" device="'+device.id+'" type="checkbox"'+captureText+'/><span> </span></label></p></td><td>'+filterText+'</td></tr>';
                 });
-                $('#connectedDevicesList').html(trHTML);
+                $('#hidDevicesList').html(trHTML);
                 $('select').formSelect();
 
                 $('input[type=checkbox][name=captureCheckbox]').on('change', function (data) {
@@ -81,10 +81,10 @@ class Main{
             data: formData,
             type: 'POST', datatype: 'json', cache:false, contentType: false, processData: false,
             success: function (data, textStatus, jqXHR) {
-                that.initWiredDevices();
+                that.updateHIDDevices();
             },
             error: function (jqXHR, textStatus, errorThrown){
-                that.initWiredDevices();
+                that.updateHIDDevices();
                 M.toast({html: "Could not set capture. "+errorThrown, classes:"red"});
             }
         });
@@ -100,10 +100,10 @@ class Main{
             data: formData,
             type: 'POST', datatype: 'json', cache:false, contentType: false, processData: false,
             success: function (data, textStatus, jqXHR) {
-                that.initWiredDevices();
+                that.updateHIDDevices();
             },
             error: function (jqXHR, textStatus, errorThrown){
-                that.initWiredDevices();
+                that.updateHIDDevices();
                 M.toast({html: "Could not set filter. "+errorThrown, classes:"red"});
             }
         });
@@ -142,7 +142,7 @@ class Main{
         return false;
     }
 
-    updateListOfDevices(){
+    updateListOfBluetoothDevices(){
         var that = this;
         $.ajax({
             type: 'GET',
@@ -151,7 +151,7 @@ class Main{
             timeout: 5000,
             //async: false,
             success: function (response) {
-                that.agent.devices_updated(response.devices);
+                that.agent.bluetoothDevicesUpdated(response.devices);
                 var trHTML = '';
                 $.each(response.devices, function (i, device) {
                     if(!device.paired) return;
@@ -170,7 +170,7 @@ class Main{
                     if(device.paired) return;
                     trHTML += '<tr><td>' + device.alias + '</td><td>' + device.address + '</td><td><a class="waves-effect waves-light btn-small" device="'+device.path+'" name="pairDeviceButton">Pair</a></td></tr>';
                 });
-                $('#pairDevicesList').html(trHTML);
+                $('#bluetoothDevicesList').html(trHTML);
                 $('a[name=pairDeviceButton]').on('click', function (data) {
                     that.webSocketManager.sendMessage({'msg':'pair_device','device':$(this).attr("device")})
                 });

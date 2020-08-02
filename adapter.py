@@ -16,7 +16,7 @@ ADAPTER_OBJECT = '/org/bluez/hci0'
 ADAPTER_INTERFACE = 'org.bluez.Adapter1'
 DEVICE_INTERFACE = 'org.bluez.Device1'
 OBJECT_MANAGER_INTERFACE = 'org.freedesktop.DBus.ObjectManager'
-DEVICE_NAME = 'Bluetooth HID Hub - Ubuntu'
+DEVICE_NAME = 'Bluetooth HID Hub - RPi'
 UUID = '00001124-0000-1000-8000-00805f9b34fb'
 
 class BluetoothAdapter:

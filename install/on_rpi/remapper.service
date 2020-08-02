@@ -5,6 +5,7 @@ After=multi-user.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/python3 /home/pi/bthidhub/remapper.py
+WorkingDirectory=/home/pi/bthidhub
 Restart=on-abort
  
 [Install]

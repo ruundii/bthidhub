@@ -37,7 +37,7 @@ sudo pip3 install PyGObject
 sudo pip3 install aiohttp
 sudo pip3 install watchgod
 
-cd cd /home/pi/bthidhub/install/on_rpi
+cd /home/pi/bthidhub/install/on_rpi
 git clone https://github.com/ruundii/bluez
 cd /home/pi/bthidhub/install/on_rpi/bluez
 autoreconf -fvi
@@ -62,3 +62,4 @@ sudo systemctl enable bluetooth
 sudo systemctl start bluetooth
 sudo systemctl enable remapper.service
 sudo systemctl start remapper.service
+sudo reboot

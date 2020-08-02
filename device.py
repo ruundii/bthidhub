@@ -17,12 +17,13 @@ device_filters = {"/org/bluez/hci0/dev_28_CF_E9_6A_05_93":"A1314"}
 
 
 class Device:
-    def __init__(self, bus : SystemMessageBus, device_registry, object_path, is_host,  control_socket_path, interrupt_socket_path):
+    def __init__(self, bus : SystemMessageBus, loop: asyncio.AbstractEventLoop,  device_registry, object_path, is_host,  control_socket_path, interrupt_socket_path):
         self.device = bus.get_proxy(service_name="org.bluez", object_path=object_path, interface_name=DEVICE_INTERFACE)
         self.props = bus.get_proxy(service_name="org.bluez", object_path=object_path, interface_name=PROPERTIES_INTERFACE)
         self.props.PropertiesChanged.connect(self.device_connected_state_changed)
 
         self.bus = bus
+        self.loop = loop
         self.device_registry = device_registry
         self.object_path = object_path
         self.is_host = is_host
@@ -38,7 +39,7 @@ class Device:
             self.filter = None
 
         print("Device ",object_path," created")
-        asyncio.ensure_future(self.reconcile_connected_state(1))
+        asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)
 
     async def reconcile_connected_state(self, delay):
         await asyncio.sleep(delay)
@@ -70,8 +71,8 @@ class Device:
             else:
                 self.device_registry.connected_devices.append(self)
             print("Connected sockets for ",self.object_path)
-            asyncio.ensure_future(self.loop_of_fun(True))
-            asyncio.ensure_future(self.loop_of_fun(False))
+            asyncio.run_coroutine_threadsafe(self.loop_of_fun(True), loop=self.loop)
+            asyncio.run_coroutine_threadsafe(self.loop_of_fun(False), loop=self.loop)
         except Exception as err:
             print("Error while connecting sockets for ",self.object_path,". Will retry in a sec", err)
             try:
@@ -80,7 +81,7 @@ class Device:
             except:
                 pass
             await asyncio.sleep(1)
-            asyncio.ensure_future(self.connect_sockets())
+            asyncio.run_coroutine_threadsafe(self.connect_sockets(), loop=self.loop)
 
     def disconnect_sockets(self):
         if self.control_socket is not None:
@@ -99,11 +100,10 @@ class Device:
 
 
     async def loop_of_fun(self, is_ctrl):
-        loop = asyncio.get_event_loop()
         sock = self.control_socket if is_ctrl else self.interrupt_socket
         while sock is not None:
             try:
-                msg = await loop.sock_recv(sock,255)
+                msg = await self.loop.sock_recv(sock,255)
             except Exception:
                 print("Cannot read data from socket. ", self.object_path ,"Closing sockets")
                 if self is not None:
@@ -112,7 +112,7 @@ class Device:
                     except:
                         print("Error while disconnecting sockets")
                 print("Arranging reconnect")
-                asyncio.ensure_future(self.reconcile_connected_state(1))
+                asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)
                 break
             if filter is not None:
                 if self.filter is not None:
@@ -140,7 +140,7 @@ class Device:
 
     def device_connected_state_changed(self, arg1,arg2, arg3):
         print("device_connected_state_changed")
-        asyncio.ensure_future(self.reconcile_connected_state(1))
+        asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)
 
     def finalise(self):
         self.props.PropertiesChanged.disconnect(self.device_connected_state_changed)
@@ -155,8 +155,9 @@ class Device:
         print("Device ",self.object_path," removed")
 
 class DeviceRegistry:
-    def __init__(self, bus:SystemMessageBus):
+    def __init__(self, bus:SystemMessageBus, loop: asyncio.AbstractEventLoop):
         self.bus = bus
+        self.loop = loop
         self.all = {}
         self.connected_hosts = []
         self.connected_devices = []
@@ -179,7 +180,7 @@ class DeviceRegistry:
             print("Device ", device_object_path, " already exist. Cannot add. Skipping.")
             return
         p = self.bus.get_proxy(service_name="org.bluez", object_path=device_object_path, interface_name=INPUT_HOST_INTERFACE if is_host else INPUT_DEVICE_INTERFACE)
-        device = Device(self.bus, self, device_object_path, is_host, p.SocketPathCtrl, p.SocketPathIntr)
+        device = Device(self.bus, self.loop, self, device_object_path, is_host, p.SocketPathCtrl, p.SocketPathIntr)
         self.all[device_object_path] = device
 
     def remove_devices(self):
@@ -202,11 +203,10 @@ class DeviceRegistry:
 
     async def send_message(self, msg, send_to_hosts, is_control_channel):
         targets: List[Device] = self.connected_hosts if send_to_hosts else self.connected_devices
-        loop = asyncio.get_event_loop()
         for target in list(targets):
             tm = target.filter.filter_message_from_host(msg) if target.filter is not None else msg
             try:
-                await loop.sock_sendall(target.control_socket if is_control_channel else target.interrupt_socket , tm)
+                await self.loop.sock_sendall(target.control_socket if is_control_channel else target.interrupt_socket , tm)
             except Exception:
                 print("Cannot send data to socket of ",target.object_path,". Closing")
                 if target is not None:
@@ -214,6 +214,6 @@ class DeviceRegistry:
                         await target.disconnect_sockets()
                     except:
                         print("Error while trying to disconnect sockets")
-                asyncio.ensure_future(target.reconcile_connected_state(1))
+                asyncio.run_coroutine_threadsafe(target.reconcile_connected_state(1), loop=self.loop)
 
 

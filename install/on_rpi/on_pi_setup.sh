@@ -31,9 +31,10 @@ sudo apt-get install git libdbus-1-dev libglib2.0-dev libudev-dev libical-dev li
 sudo pip3 install pybluez
 sudo pip3 install dasbus
 sudo pip3 install asyncio
-sudo pip3 install gbulb
+sudo pip3 install asyncio_glib
 sudo pip3 install evdev
 sudo pip3 install PyGObject
+sudo pip3 install aiohttp
 
 cd cd /home/pi/bthidhub/install/on_rpi
 git clone https://github.com/ruundii/bluez

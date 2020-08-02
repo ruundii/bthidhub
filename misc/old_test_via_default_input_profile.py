@@ -48,7 +48,7 @@ class MyProfile(object):
         sckt.listen(5)
         self.cinterrupt, cinfo = sckt.accept()
         print("Got a connection on the interrupt channel from %s " % cinfo[0])
-        asyncio.ensure_future(self.loop_of_fun())
+        asyncio.run_coroutine_threadsafe(self.loop_of_fun())
         print("NewConnection finish")
         print("NewConnection thread",threading.currentThread().getName())
 

@@ -39,11 +39,11 @@ class Web:
         #web.run_app(self.app)
         asyncio.run_coroutine_threadsafe(self.start_server(), loop=self.loop)
 
-    def on_hid_devices_change(self):
+    async def on_hid_devices_change(self):
         for ws in self.ws:
             asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'hid_devices_updated'}), loop=self.loop)
 
-    def on_bluetooth_devices_change(self):
+    async def on_bluetooth_devices_change(self):
         for ws in self.ws:
             asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'bt_devices_updated'}), loop=self.loop)
 

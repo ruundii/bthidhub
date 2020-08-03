@@ -2,10 +2,6 @@ cd /home/pi/bthidhub/install/on_rpi
 
 sudo echo 0 | sudo tee /sys/class/leds/led0/brightness > /dev/null
 
-sudo echo "bthidhub" | cat > /etc/hostname
-sudo sed -Ei 's/^127\.0\.1\.1.*$/127.0.1.1\tbthidhub/' /etc/hosts
-
-
 sudo apt-get update -y | sudo apt-get upgrade -y
 
 systemctl --user stop pulseaudio.socket
@@ -62,4 +58,8 @@ sudo systemctl enable bluetooth
 sudo systemctl start bluetooth
 sudo systemctl enable remapper.service
 sudo systemctl start remapper.service
+
+sudo hostnamectl set-hostname bthidhub
+sudo sed -Ei 's/^127\.0\.1\.1.*$/127.0.1.1\tbthidhub/' /etc/hosts
+
 sudo reboot

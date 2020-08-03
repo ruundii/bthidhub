@@ -8,7 +8,12 @@ The **Bluetooth HID hub** presents itself to a host computer as a Bluetooth kb+m
 Now contains automated installation scripts for a newly flashed Raspbian OS (See install directory).
 
 Has a interface to configure plugged and bluetooth input devices and connect to a bluetooth host machine.
-![HID devices screen](bt-hid-hub-devices.png)
-![Bluetooth devices screen](bt-hid-hub-bt-devices.png)
+
+
+
+<img src="bt-hid-hub-devices.png" width="500" alt="HID devices screen"/>
+
+<img src="bt-hid-hub-bt-devices.png" width="500" alt="Bluetooth devices screen"/>
+
 
 Soon will add an ability to switch hosts with a keyboard or mouse key combination (so you can use it as an input for several computers, easily switching which one is currently active).

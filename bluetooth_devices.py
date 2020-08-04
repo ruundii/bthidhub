@@ -39,7 +39,7 @@ class BluetoothDevice:
             if self.connected and not self.sockets_connected:
                 await self.connect_sockets()
             elif not self.connected and self.sockets_connected:
-                await self.disconnect_sockets()
+                self.disconnect_sockets()
         except Exception as exc:
             print("Possibly dbus error during reconcile_connected_state ",exc)
 
@@ -100,7 +100,7 @@ class BluetoothDevice:
                 print("Cannot read data from socket. ", self.object_path ,"Closing sockets")
                 if self is not None:
                     try:
-                        await self.disconnect_sockets()
+                        self.disconnect_sockets()
                     except:
                         print("Error while disconnecting sockets")
                 print("Arranging reconnect")

@@ -154,6 +154,7 @@ class BluetoothDeviceRegistry:
         self.connected_devices = []
         self.on_devices_changed_handler = None
         self.hid_devices = None
+        self.current_host_index = 0
 
     def set_hid_devices(self, hid_devices):
         self.hid_devices = hid_devices
@@ -200,13 +201,20 @@ class BluetoothDeviceRegistry:
         device.finalise()
         del device
 
+    def switch_host(self):
+        self.current_host_index = (self.current_host_index + 1) % len(self.connected_hosts)
+
+    def __get_current_host_as_list(self):
+        if len(self.connected_hosts) <= self.current_host_index:
+            return []
+        return [self.connected_hosts[self.current_host_index]]
 
 
     def send_message(self, msg, send_to_hosts, is_control_channel):
         if IGNORE_INPUT_DEVICES and not send_to_hosts and not is_control_channel and self.hid_devices is not None:
             asyncio.run_coroutine_threadsafe(self.hid_devices.send_message_to_devices(msg), loop=self.loop)
             return
-        targets: List[BluetoothDevice] = self.connected_hosts if send_to_hosts else self.connected_devices
+        targets: List[BluetoothDevice] = self.__get_current_host_as_list() if send_to_hosts else self.connected_devices
         for target in list(targets):
             try:
                 socket = target.control_socket if is_control_channel else target.interrupt_socket

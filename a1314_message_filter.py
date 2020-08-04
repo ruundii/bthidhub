@@ -109,6 +109,11 @@ class A1314MessageFilter(HIDMessageFilter):
         result_report[1] = (result_report[1] | MODIFIER_MASK_LEFT_CONTROL) if self.is_fn_pressed else (
                     result_report[1] & ~MODIFIER_MASK_LEFT_CONTROL)
 
+        #print(bytes(result_report).hex())
+        if result_report == b'\x01\x05\x00\x2b\x00\x00\x00\x00\x00':
+            print("host switch")
+            return b'\xff'
+
         self.last_regular_report = result_report
         return b'\xa1'+bytes(result_report)
 

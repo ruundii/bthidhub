@@ -62,7 +62,10 @@ class HIDDevice:
         tm = self.filter.filter_message_to_host(msg)
         if tm is None or self.device_registry.bluetooth_devices is None:
             return
-        self.device_registry.bluetooth_devices.send_message(tm, True, False)
+        if tm == b'\xff':
+            self.device_registry.bluetooth_devices.switch_host()
+        else:
+            self.device_registry.bluetooth_devices.send_message(tm, True, False)
 
     async def send_message(self, msg):
         tm = self.filter.filter_message_from_host(msg)

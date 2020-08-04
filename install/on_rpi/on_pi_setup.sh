@@ -24,7 +24,6 @@ systemctl --user mask obex
 
 sudo apt-get install git libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf automake libtool python3-pip -y
 
-sudo pip3 install pybluez
 sudo pip3 install dasbus
 sudo pip3 install asyncio
 sudo pip3 install asyncio_glib

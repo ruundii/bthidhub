@@ -204,7 +204,7 @@ class BluetoothDeviceRegistry:
 
     def send_message(self, msg, send_to_hosts, is_control_channel):
         if IGNORE_INPUT_DEVICES and not send_to_hosts and not is_control_channel and self.hid_devices is not None:
-            self.hid_devices.send_message_to_devices(msg)
+            asyncio.run_coroutine_threadsafe(self.hid_devices.send_message_to_devices(msg), loop=self.loop)
             return
         targets: List[BluetoothDevice] = self.connected_hosts if send_to_hosts else self.connected_devices
         for target in list(targets):

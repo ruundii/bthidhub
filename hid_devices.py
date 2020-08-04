@@ -121,7 +121,7 @@ class HIDDeviceRegistry:
         async for changes in awatch('/sys/bus/hid/devices', watcher_cls=DeviceDirWatcher):
             self.__scan_devices()
             if self.on_devices_changed_handler is not None:
-                self.on_devices_changed_handler()
+                await self.on_devices_changed_handler()
 
     def __scan_devices(self):
         devs = []

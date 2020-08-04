@@ -16,4 +16,4 @@ Has a interface to configure plugged and bluetooth input devices and connect to 
 <img src="bt-hid-hub-bt-devices.png" width="500" alt="Bluetooth devices screen"/>
 
 
-Soon will add an ability to switch hosts with a keyboard or mouse key combination (so you can use it as an input for several computers, easily switching which one is currently active).
+Added an ability to switch hosts with a keyboard (Fn+Cmd+Tab on Apple A1314 keyboard). Now can use the hub as an input for several computers, easily switching which one is currently active.

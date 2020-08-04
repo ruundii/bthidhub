@@ -108,7 +108,7 @@ class BluetoothDevice:
                 break
             if msg is None or len(msg)==0:
                 continue
-            await self.device_registry.send_message(msg, not self.is_host, is_ctrl)
+            self.device_registry.send_message(msg, not self.is_host, is_ctrl)
             sock = self.control_socket if is_ctrl else self.interrupt_socket
 
 
@@ -202,19 +202,20 @@ class BluetoothDeviceRegistry:
 
 
 
-    async def send_message(self, msg, send_to_hosts, is_control_channel):
+    def send_message(self, msg, send_to_hosts, is_control_channel):
         if IGNORE_INPUT_DEVICES and not send_to_hosts and not is_control_channel and self.hid_devices is not None:
-            await self.hid_devices.send_message_to_devices(msg)
+            self.hid_devices.send_message_to_devices(msg)
             return
         targets: List[BluetoothDevice] = self.connected_hosts if send_to_hosts else self.connected_devices
         for target in list(targets):
             try:
-                await self.loop.sock_sendall(target.control_socket if is_control_channel else target.interrupt_socket , msg)
+                socket = target.control_socket if is_control_channel else target.interrupt_socket
+                socket.sendall(msg)
             except Exception:
                 print("Cannot send data to socket of ",target.object_path,". Closing")
                 if target is not None:
                     try:
-                        await target.disconnect_sockets()
+                        target.disconnect_sockets()
                     except:
                         print("Error while trying to disconnect sockets")
                 asyncio.run_coroutine_threadsafe(target.reconcile_connected_state(1), loop=self.loop)

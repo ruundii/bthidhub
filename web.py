@@ -41,11 +41,11 @@ class Web:
 
     async def on_hid_devices_change(self):
         for ws in self.ws:
-            asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'hid_devices_updated'}), loop=self.loop)
+            await ws.send_json({'msg': 'hid_devices_updated'})
 
     async def on_bluetooth_devices_change(self):
         for ws in self.ws:
-            asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'bt_devices_updated'}), loop=self.loop)
+            await ws.send_json({'msg': 'bt_devices_updated'})
 
     async def start_server(self):
         self.runner = web.AppRunner(self.app)
@@ -115,11 +115,11 @@ class Web:
     async def get_bluetooth_devices(self, request):
         return web.Response(text=json.dumps(self.adapter.get_devices()))
 
-    def on_agent_action(self, msg):
+    async def on_agent_action(self, msg):
         for ws in self.ws:
             asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'agent_action', 'data':msg}), loop=self.loop)
 
-    def on_adapter_interface_changed(self):
+    async def on_adapter_interface_changed(self):
         for ws in self.ws:
             asyncio.run_coroutine_threadsafe(ws.send_json({'msg': 'bt_devices_updated'}), loop=self.loop)
 
@@ -143,7 +143,9 @@ class Web:
                     elif data['msg'] == 'request_confirmation_response':
                         self.adapter.agent_request_confirmation_response(data['device'], data['passkey'], data['confirmed'])
                     elif data['msg'] == 'pair_device':
+                        print("pairing")
                         self.loop.run_in_executor(self.executor, self.adapter.device_action, 'pair', data['device'])
+                        print("pairing end")
                     elif data['msg'] == 'connect_device':
                         self.loop.run_in_executor(self.executor, self.adapter.device_action, 'connect', data['device'])
                     elif data['msg'] == 'disconnect_device':
@@ -153,10 +155,8 @@ class Web:
                     else:
                         pass
                         #await ws.send_json({'msg':'connected'})
-
             elif msg.type == web.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
-
         print('websocket connection closed')
         return ws

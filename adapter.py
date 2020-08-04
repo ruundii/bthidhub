@@ -204,6 +204,7 @@ class BluetoothAdapter:
         return {"devices": devices, "scanning":self.adapter.Discovering}
 
     def device_action(self, action, device_path):
+
         if self.adapter is None:
             return
         dp = self.bus.get_proxy(service_name="org.bluez", object_path=device_path, interface_name=DEVICE_INTERFACE)
@@ -244,7 +245,7 @@ class BluetoothAdapter:
 
     def on_agent_action(self, msg):
         if self.on_agent_action_handler is not None:
-            self.on_agent_action_handler(msg)
+            asyncio.run_coroutine_threadsafe(self.on_agent_action_handler(msg), loop=self.loop)
 
 
     def set_on_interface_changed_handler(self, handler):
@@ -252,7 +253,7 @@ class BluetoothAdapter:
 
     def on_interface_changed(self):
         if self.on_interface_changed_handler is not None:
-            self.on_interface_changed_handler()
+            asyncio.run_coroutine_threadsafe(self.on_interface_changed_handler(), loop=self.loop)
 
     @property
     def powered(self):

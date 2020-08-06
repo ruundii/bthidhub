@@ -1,7 +1,6 @@
-<img src="bthidhuboverall.png" width="500" alt="BT HID Hub Diagram"/>
-
-# bthidhub
 # Bluetooth HID hub
+
+<img src="bthidhuboverall.png" width="500" alt="BT HID Hub Diagram"/>
 
 This hub uses a modified version of the Bluez linux bluetooth protocol stack (https://github.com/ruundii/bluez). The modified version extends bluetooth input profile to be able to **simultaniously** support host and device connections (vs default input device connections only).  With this you can e.g. retransmit Bluetooth input devices to other machines
 

@@ -1,3 +1,5 @@
+<img src="bthidhuboverall.png" width="500" alt="BT HID Hub Diagram"/>
+
 # bthidhub
 # Bluetooth HID hub
 

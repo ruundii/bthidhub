@@ -78,7 +78,10 @@ class HIDDevice:
     def finalise(self):
         #close file
         for event_device in self.events_devices:
-            event_device.ungrab()
+            try:
+                event_device.ungrab()
+            except:
+                pass
         try:
             self.loop.remove_reader(self.hidraw_file)
             os.close(self.hidraw_file)

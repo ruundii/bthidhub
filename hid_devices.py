@@ -16,7 +16,7 @@ CAPTURE_ELEMENT = 'capture'
 FILTER_ELEMENT = 'filter'
 
 FILTERS = [
-    {"id":"Default", "name":"No Filter"},
+    {"id":"Default", "name":"Default"},
     {"id":"Mouse", "name":"Mouse"},
     {"id":"A1314", "name":"A1314"}
 ]

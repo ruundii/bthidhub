@@ -67,6 +67,7 @@ class Main{
             },
             error: function (jqXHR, textStatus, errorThrown){
                 M.toast({html: "Failed to load connected devices list. "+errorThrown, classes:"red"});
+                that.updateHIDDevices();
             }
         });
     }
@@ -190,6 +191,7 @@ class Main{
             },
             error: function (jqXHR, textStatus, errorThrown){
                 M.toast({html: "Failed to load update bluetooth devices list. "+errorThrown, classes:"red"});
+                that.updateListOfBluetoothDevices();
             }
         });
     }
@@ -219,8 +221,8 @@ class Main{
             },
             error: function (jqXHR, textStatus, errorThrown){
                 M.toast({html: "Could not "+(mode ? "start":"stop")+" scan. "+errorThrown, classes:"red"});
-                if(errorThrown == "Operation already in progress") that.scanning = true;
-                else if(errorThrown == "No discovery started") that.scanning = false;
+                if(errorThrown === "Operation already in progress") that.scanning = true;
+                else if(errorThrown === "No discovery started") that.scanning = false;
                 else that.scanning = !mode;
                 that.setScanningState();
             }

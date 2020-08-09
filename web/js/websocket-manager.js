@@ -2,6 +2,7 @@ var socket = null;
 var connected = false;
 var isAttemptingToConnect = false;
 var isRefreshing = false;
+var reconnectingTimer = null;
 
 
 var STATE_CONNECTING = "connecting";
@@ -54,7 +55,19 @@ class WebSocketManager{
                 console.log('client side socket onclose');
                 socket = null;
                 that.changeConnectedState(false);
+                if(!isAttemptingToConnect) M.toast({html: "Server disconnected.", classes:"red"});
                 isAttemptingToConnect = false;
+                if(reconnectingTimer == null) {
+                    reconnectingTimer = setInterval(function () {
+                        if (!connected && !isAttemptingToConnect) {
+                            that.connect();
+                        }
+                        if (connected) {
+                            clearInterval(reconnectingTimer);
+                            reconnectingTimer = null;
+                        }
+                    }, 1000);
+                }
             };
         });
     }

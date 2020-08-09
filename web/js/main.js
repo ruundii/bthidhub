@@ -6,10 +6,58 @@ const views = {
 class Main{
     constructor() {
         this.activeView = views.DEVICES;
+        this.authorised = false;
     }
 
     init(){
+        $('#pageDiv').hide();
+        this.checkAuthorised();
+    }
+
+    checkAuthorised(){
         var that = this;
+        $.ajax({
+            type: 'GET',
+            dataType: 'text',
+            url: 'http://' + location.hostname + ':8080/authorised',
+            timeout: 5000,
+            //async: false,
+            success: function (response) {
+                this.authorised = true;
+                that.init_app();
+                },
+            error: function (jqXHR, textStatus, errorThrown){
+                $('.modal').modal({dismissible:false,});
+                $(document).on('submit', '#loginForm',  e => {that.login();return false;});
+                var instance = M.Modal.getInstance($('#loginPopup'));
+                instance.open();
+            }
+        });
+    }
+
+    login(){
+        var that = this;
+        var formData = new FormData();
+        formData.append("password", $('#piPassword')[0].value);
+        $.ajax({
+            url: "http://" + location.hostname + ":8080/login",
+            data: formData,
+            type: 'POST', datatype: 'json', cache:false, contentType: false, processData: false,
+            success: function (data, textStatus, jqXHR) {
+                var instance = M.Modal.getInstance($('#loginPopup'));
+                instance.close();
+                that.init_app();
+            },
+            error: function (jqXHR, textStatus, errorThrown){
+                M.toast({html: "Not authorised. "+errorThrown, classes:"red"});
+            }
+        });
+    }
+
+    init_app(){
+        var that = this;
+
+        $('#pageDiv').show();
         this.setActiveView(views.DEVICES);
         $('#settingsNavButton').on('click', e => {that.setActiveView(views.SETTINGS);});
         $('#devicesNavButton').on('click', e => {that.setActiveView(views.DEVICES);});

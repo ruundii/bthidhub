@@ -18,92 +18,94 @@
     <title>Bluetooth HID Hub</title>
 </head>
 <body>
-<div class="navbar-fixed">
-    <nav>
-        <div class="nav-wrapper teal darken-2 z-depth-1 valign-wrapper">
-            <a href="#" class="brand-logo right"><span class="my-brand-logo">Bluetooth HID Hub</span></a>
-            <ul style="position:absolute; left: 0;">
-                <li><a id="devicesNavButton" class="waves-effect waves-light darken-2 large navbar-item">Devices</a></li>
-                <li><a id="settingsNavButton" class="waves-effect waves-light darken-2 large navbar-item" >Settings</a></li>
-            </ul>
-        </div>
-    </nav>
-</div>
-<div class="row" style="width: 100%; padding: 0pt 15pt 0pt 15pt;" id="devicesPanel">
-    <div class="row">
-        <div class="col s12" >
-            <ul class="tabs">
-                <li class="tab col s4 m3 l2 teal lighten-2"  ><a href="#hidDevices">HID devices</a></li>
-                <li class="tab col s4 m3 l2 teal lighten-2"><a href="#bluetoothDevices">Bluetooth devices</a></li>
-            </ul>
-        </div>
-        <div id="hidDevices" class="col s12">
-            <div class="section">
-                <h5>Connected HID devices</h5>
-                <div class="fixed-action-btn">
-                    <a class="waves-effect waves-light btn-floating" id="refreshHIDDevices"><i class="material-icons right">refresh</i>Refresh</a>
+<div id="pageDiv">
+    <div class="navbar-fixed">
+        <nav>
+            <div class="nav-wrapper teal darken-2 z-depth-1 valign-wrapper">
+                <a href="#" class="brand-logo right"><span class="my-brand-logo">Bluetooth HID Hub</span></a>
+                <ul style="position:absolute; left: 0;">
+                    <li><a id="devicesNavButton" class="waves-effect waves-light darken-2 large navbar-item">Devices</a></li>
+                    <li><a id="settingsNavButton" class="waves-effect waves-light darken-2 large navbar-item" >Settings</a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+    <div class="row" style="width: 100%; padding: 0pt 15pt 0pt 15pt;" id="devicesPanel">
+        <div class="row">
+            <div class="col s12" >
+                <ul class="tabs">
+                    <li class="tab col s4 m3 l2 teal lighten-2"  ><a href="#hidDevices">HID devices</a></li>
+                    <li class="tab col s4 m3 l2 teal lighten-2"><a href="#bluetoothDevices">Bluetooth devices</a></li>
+                </ul>
+            </div>
+            <div id="hidDevices" class="col s12">
+                <div class="section">
+                    <h5>Connected HID devices</h5>
+                    <div class="fixed-action-btn">
+                        <a class="waves-effect waves-light btn-floating" id="refreshHIDDevices"><i class="material-icons right">refresh</i>Refresh</a>
+                    </div>
+                    <form action="#">
+                        <table>
+                            <thead>
+                                <th>Device Name</th>
+                                <th>Capture</th>
+                                <th>Report Filter</th>
+                            </thead>
+                            <tbody id="hidDevicesList"></tbody>
+                        </table>
+                    </form>
                 </div>
-                <form action="#">
+            </div>
+            <div id="bluetoothDevices" class="col s12">
+                <div class="section">
+                    <h5>Pair devices</h5>
+                    <a class="waves-effect waves-light btn" id="startScanningButton"><i class="material-icons left">bluetooth_searching</i>Start Scanning</a>
+                    <a class="waves-effect waves-light btn" id="stopScanningButton"><i class="material-icons left">bluetooth_disabled</i>Stop Scanning</a>
+                    <a class="waves-effect waves-light btn" id="startDiscoverableButton"><i class="material-icons left">bluetooth_searching</i>Make Discoverable</a>
+                    <a class="waves-effect waves-light btn" id="stopDiscoverableButton"><i class="material-icons left">bluetooth_disabled</i>Make Not Discoverable</a>
                     <table>
                         <thead>
-                            <th>Device Name</th>
-                            <th>Capture</th>
-                            <th>Report Filter</th>
+                            <th>Device</th>
+                            <th>Address</th>
+                            <th></th>
                         </thead>
-                        <tbody id="hidDevicesList"></tbody>
+                        <tbody id="bluetoothDevicesList"></tbody>
                     </table>
-                </form>
-            </div>
-        </div>
-        <div id="bluetoothDevices" class="col s12">
-            <div class="section">
-                <h5>Pair devices</h5>
-                <a class="waves-effect waves-light btn" id="startScanningButton"><i class="material-icons left">bluetooth_searching</i>Start Scanning</a>
-                <a class="waves-effect waves-light btn" id="stopScanningButton"><i class="material-icons left">bluetooth_disabled</i>Stop Scanning</a>
-                <a class="waves-effect waves-light btn" id="startDiscoverableButton"><i class="material-icons left">bluetooth_searching</i>Make Discoverable</a>
-                <a class="waves-effect waves-light btn" id="stopDiscoverableButton"><i class="material-icons left">bluetooth_disabled</i>Make Not Discoverable</a>
-                <table>
-                    <thead>
-                        <th>Device</th>
-                        <th>Address</th>
-                        <th></th>
-                    </thead>
-                    <tbody id="bluetoothDevicesList"></tbody>
-                </table>
 
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row" style="width: 100%; padding: 0pt 15pt 0pt 15pt;" id="settingsPanel">
-    <h4>Settings</h4>
-    <div class=" col s12 m8 l6 xl5">
-        <div class="section">
-            <h5>Change 'pi' user password</h5>
-            <p><span style="color: darkred">(*)</span> Default password is 'raspberry'</p>
+    <div class="row" style="width: 100%; padding: 0pt 15pt 0pt 15pt;" id="settingsPanel">
+        <h4>Settings</h4>
+        <div class=" col s12 m8 l6 xl5">
+            <div class="section">
+                <h5>Change 'pi' user password</h5>
+                <p><span style="color: darkred">(*)</span> Default password is 'raspberry'</p>
+            </div>
+            <form id="changePasswordForm" action="#" novalidate="novalidate">
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="currentPassword" type="password" class="validate" required>
+                        <label for="currentPassword">Current password</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="newPassword1" type="password" class="validate" required>
+                        <label for="newPassword1">New password</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="newPassword2" type="password" class="validate" required>
+                        <label for="newPassword2">Repeat new password</label>
+                    </div>
+                </div>
+                <button class="waves-effect waves-light btn" id="setPasswordButton" type="submit" name="action">Set password</button>
+            </form>
         </div>
-        <form id="changePasswordForm" action="#" novalidate="novalidate">
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="currentPassword" type="password" class="validate" required>
-                    <label for="currentPassword">Current password</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="newPassword1" type="password" class="validate" required>
-                    <label for="newPassword1">New password</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="newPassword2" type="password" class="validate" required>
-                    <label for="newPassword2">Repeat new password</label>
-                </div>
-            </div>
-            <button class="waves-effect waves-light btn" id="setPasswordButton" type="submit" name="action">Set password</button>
-        </form>
     </div>
 </div>
 <div id="modalPopup" class="modal">
@@ -119,6 +121,26 @@
         </div>
     </div>
 </div>
+<div id="loginPopup" class="modal">
+    <form id="loginForm" class="col s6">
+        <div class="modal-content">
+            <h5>BT HID Hub Login</h5>
+            <div class="row">
+                <div class="row">
+                    <div class="input-field col s6">
+                        <input id="piPassword" type="password" class="validate" required>
+                        <label for="piPassword">Password for 'pi' user</label>
+                        <span class="helper-text">Default password is 'raspberry'</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="waves-effect waves-light btn" id="modalLoginButton" type="submit" name="login">Login</button>
+            </div>
+        </div>
+    </form>
+</div>
+
 <script type="text/javascript" src="js/materialize.min.js"></script>
 <script>
     $(document).ready(function(){

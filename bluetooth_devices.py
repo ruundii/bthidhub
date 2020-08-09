@@ -4,6 +4,7 @@ from dasbus.connection import SystemMessageBus
 import asyncio
 import socket
 from typing import List
+import os
 
 OBJECT_MANAGER_INTERFACE = 'org.freedesktop.DBus.ObjectManager'
 DEVICE_INTERFACE = 'org.bluez.Device1'
@@ -156,11 +157,14 @@ class BluetoothDeviceRegistry:
         self.hid_devices = None
         self.current_host_index = 0
 
+
     def set_hid_devices(self, hid_devices):
         self.hid_devices = hid_devices
 
+
     def set_on_devices_changed_handler(self, handler):
         self.on_devices_changed_handler = handler
+
 
     def add_devices(self):
         print("Adding all BT devices")
@@ -181,14 +185,36 @@ class BluetoothDeviceRegistry:
         if device_object_path in self.all:
             print("Device ", device_object_path, " already exist. Cannot add. Skipping.")
             return
+        #ensure master role for this connection, otherwise latency of sending packets to hosts may get pretty bad
+        asyncio.ensure_future(self.switch_to_master(device_object_path[-17:].replace("_",":")))
         p = self.bus.get_proxy(service_name="org.bluez", object_path=device_object_path, interface_name=INPUT_HOST_INTERFACE if is_host else INPUT_DEVICE_INTERFACE)
         device = BluetoothDevice(self.bus, self.loop, self, device_object_path, is_host, p.SocketPathCtrl, p.SocketPathIntr)
         self.all[device_object_path] = device
+
+
+    async def switch_to_master(self, device_address):
+        print("switch to master called for ", device_address)
+        while self.is_slave(device_address):
+            try:
+                success = os.system("sudo hcitool sr " + device_address + " MASTER") == 0
+                print("hcitool ",device_address," success:",success)
+            except Exception as exc:
+                print("hcitool ",device_address," exception:",exc)
+            await asyncio.sleep(5)
+
+    def is_slave(self, device_address):
+        with os.popen('sudo hcitool con') as stream:
+            for line in stream.readlines():
+                if line.find(device_address) >= 0:
+                    if line.find("SLAVE") >= 0:
+                        return True
+        return False
 
     def remove_devices(self):
         print("Removing all BT devices")
         while len(self.all) >0:
             self.remove_device(list(self.all)[0])
+
 
     def remove_device(self, device_object_path):
         if device_object_path not in self.all:
@@ -201,8 +227,10 @@ class BluetoothDeviceRegistry:
         device.finalise()
         del device
 
+
     def switch_host(self):
         self.current_host_index = (self.current_host_index + 1) % len(self.connected_hosts)
+
 
     def __get_current_host_as_list(self):
         if len(self.connected_hosts) <= self.current_host_index:

@@ -3,9 +3,10 @@
 class HIDMessageFilter:
 
     def filter_message_to_host(self, msg):
-        if len(msg) < 7:
-            return None
-        msg = b'\xa1\x01' + msg
+        if len(msg) == 8:
+            return b'\xa1\x01' + msg
+        else:
+            return b'\xa1' + msg
         return msg
 
 

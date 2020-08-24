@@ -72,7 +72,10 @@ class HIDDevice:
     async def send_message(self, msg):
         tm = self.filter.filter_message_from_host(msg)
         if tm is not None and self.hidraw_file is not None:
-            os.write(self.hidraw_file, tm)
+            try:
+                await os.write(self.hidraw_file, tm)
+            except:
+                pass
 
     def __eq__(self, other):
         return self.device_id == other.device_id
@@ -124,8 +127,6 @@ class HIDDeviceRegistry:
     async def send_message_to_devices(self, msg):
         for device in self.capturing_devices.values():
             await device.send_message(msg)
-
-
 
     async def __watch_device_changes(self):
         async for changes in awatch('/dev/input', watcher_cls=DeviceDirWatcher):

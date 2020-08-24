@@ -46,3 +46,7 @@ ul li {
     word-break: normal;
     white-space: normal;
 }
+
+.collapsible-body{
+    padding: 10px 15px 0px 15px;
+}

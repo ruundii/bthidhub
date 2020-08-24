@@ -73,8 +73,9 @@ class Main{
 
         $(document).on('submit', '#changePasswordForm',  e => {that.changePassword();return false;});
         $('.fixed-action-btn').floatingActionButton();
-        $('#refreshHIDDevices').on('click', e => {that.updateHIDDevices();});
         $('.tabs').tabs();
+        $('.collapsible').collapsible();
+        //$('select').formSelect();
         this.updateHIDDevices();
         this.updateListOfBluetoothDevices();
         this.agent = new Agent(this);
@@ -93,6 +94,7 @@ class Main{
                 var trHTML = '';
                 $.each(response.devices, function (i, device) {
                     var captureText = '';
+                    var disable_text = '';
                     var filterText = '<div class="input-field col s12"><select name="filterSelect" device="'+device.id+'">';
                     $.each(response.filters, function (j, filter) {
                         var selected = '';
@@ -100,8 +102,9 @@ class Main{
                         filterText+='<option value="'+filter.id+'"'+selected+'>' +filter.name+ '</option>';
                     });
                     filterText+='</select></div>';
-                    if(device.capture) captureText = ' checked="checked"'
-                    trHTML += '<tr><td>' + device.name + '</td><td class="capture-check"><p><label><input name="captureCheckbox" device="'+device.id+'" type="checkbox"'+captureText+'/><span> </span></label></p></td><td>'+filterText+'</td></tr>';
+                    if(!device.compatibility_mode && device.capture) captureText = ' checked="checked"'
+                    if(device.compatibility_mode) disable_text = '  disabled="disabled"';
+                    trHTML += '<tr><td>' + device.name + '</td><td class="capture-check"><p><label><input name="captureCheckbox" device="'+device.id+'" type="checkbox"'+captureText+disable_text+'/><span> </span></label></p></td><td>'+filterText+'</td></tr>';
                 });
                 $('#hidDevicesList').html(trHTML);
                 $('select').formSelect();
@@ -112,6 +115,25 @@ class Main{
                 $('select[name=filterSelect]').on('change', function (data) {
                     that.setFilter($(this).attr("device"), $(this).val());
                 });
+
+                //fill compatibility device table
+                trHTML = '';
+                var inputDeviceSelected = false;
+                $.each(response.input_devices, function (i, device) {
+                    var compatibilityModeText = '';
+                    if(device.compatibility_mode) {
+                        inputDeviceSelected = true;
+                        compatibilityModeText = ' checked="checked"'
+                    }
+                    trHTML += '<tr><td>' + device.name + '</td><td class="capture-check"><p><label><input name="compatibilityCheckbox" device="'+device.path+'" type="checkbox"'+compatibilityModeText+'/><span> </span></label></p></td></tr>';
+                });
+                $('#compatilibilityDevicesList').html(trHTML);
+                $('input[type=checkbox][name=compatibilityCheckbox]').on('change', function (data) {
+                    that.setCompatibilityDevice($(this).attr("device"), $(this).prop("checked"));
+                });
+                if(inputDeviceSelected){
+                    M.Collapsible.getInstance($('#keyboardCompatibilityPanel')).open(0);
+                }
             },
             error: function (jqXHR, textStatus, errorThrown){
                 M.toast({html: "Failed to load connected devices list. "+errorThrown, classes:"red"});
@@ -154,6 +176,25 @@ class Main{
             error: function (jqXHR, textStatus, errorThrown){
                 that.updateHIDDevices();
                 M.toast({html: "Could not set filter. "+errorThrown, classes:"red"});
+            }
+        });
+    }
+
+    setCompatibilityDevice(device, state){
+        var that = this;
+        var formData = new FormData();
+        formData.append("device_path", device);
+        formData.append("compatibility_state", state);
+        $.ajax({
+            url: "http://" + location.hostname + ":8080/setcompatibilitydevice",
+            data: formData,
+            type: 'POST', datatype: 'json', cache:false, contentType: false, processData: false,
+            success: function (data, textStatus, jqXHR) {
+                that.updateHIDDevices();
+            },
+            error: function (jqXHR, textStatus, errorThrown){
+                that.updateHIDDevices();
+                M.toast({html: "Could not set compatibility mode. "+errorThrown, classes:"red"});
             }
         });
     }

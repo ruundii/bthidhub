@@ -4,8 +4,8 @@
     <!--Import Google Icon Font-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
-    <link type="text/css" rel="stylesheet" href="css/main.css?4" />
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="css/main.css"/>
 
     <script type="text/javascript" src="js/jquery-3.5.1.min.js"></script>
     <script type="text/javascript" src="js/websocket-manager.js"></script>
@@ -24,50 +24,102 @@
             <div class="nav-wrapper teal darken-2 z-depth-1 valign-wrapper">
                 <a href="#" class="brand-logo right"><span class="my-brand-logo">Bluetooth HID Hub</span></a>
                 <ul style="position:absolute; left: 0;">
-                    <li><a id="devicesNavButton" class="waves-effect waves-light darken-2 large navbar-item">Devices</a></li>
-                    <li><a id="settingsNavButton" class="waves-effect waves-light darken-2 large navbar-item" >Settings</a></li>
+                    <li><a id="devicesNavButton" class="waves-effect waves-light darken-2 large navbar-item">Devices</a>
+                    </li>
+                    <li><a id="settingsNavButton"
+                           class="waves-effect waves-light darken-2 large navbar-item">Settings</a></li>
                 </ul>
             </div>
         </nav>
     </div>
     <div class="row" style="width: 100%; padding: 0pt 15pt 0pt 15pt;" id="devicesPanel">
         <div class="row">
-            <div class="col s12" >
+            <div class="col s12">
                 <ul class="tabs">
-                    <li class="tab col s4 m3 l2 teal lighten-2"  ><a href="#hidDevices">HID devices</a></li>
+                    <li class="tab col s4 m3 l2 teal lighten-2"><a href="#hidDevices">HID devices</a></li>
                     <li class="tab col s4 m3 l2 teal lighten-2"><a href="#bluetoothDevices">Bluetooth devices</a></li>
                 </ul>
             </div>
             <div id="hidDevices" class="col s12">
                 <div class="section">
                     <h5>Connected HID devices</h5>
-                    <div class="fixed-action-btn">
-                        <a class="waves-effect waves-light btn-floating" id="refreshHIDDevices"><i class="material-icons right">refresh</i>Refresh</a>
-                    </div>
+                    <h6>HID Raw Devices</h6>
+                    <p>
+                        Selected report filter should translate HID reports to/from
+                        the selected device and BT HID Hub Bluetooth device according to its HID descriptor. Default
+                        filter passes HID messages as is (should be good for most pretty standard keyboards). For some
+                        devices OS may create several HID Raw devices, e.g. one for standard and another one for fancy
+                        keys.
+                        If Default filter does not work and there is not specific filter for your keyboard, then you may
+                        want to develop a device-specific filter (most flexible, but requires some work) or use your
+                        keyboard in compatibility mode (see below).
+                    </p>
                     <form action="#">
                         <table>
                             <thead>
-                                <th>Device Name</th>
-                                <th>Capture</th>
-                                <th>Report Filter</th>
+                            <th>Device Name</th>
+                            <th>Capture</th>
+                            <th>Report Filter</th>
                             </thead>
                             <tbody id="hidDevicesList"></tbody>
                         </table>
                     </form>
                 </div>
+                <div>
+                    <ul class="collapsible" id="keyboardCompatibilityPanel">
+                        <li>
+                            <div class="collapsible-header"><i class="material-icons">keyboard</i>Keyboard Compatibility
+                                Mode
+                            </div>
+                            <div class="collapsible-body">
+                                <p>If none of the existing filters work for your keyboard and you do not want to create
+                                    your own filter, you can set your keyboard to work in a compatibility mode. In this
+                                    mode BT HID Hub will capture the keyboard events via EVDEV after they are processed
+                                    by OS and will create a virtual HID Raw keyboard as a destination for those events.
+                                    This virtual HID Raw keyboard will appear in the HID Devices table above, where you
+                                    should turn on capture and apply a default (or remapping) filter. If OS creates
+                                    several input devices for your one physical device, you may need to set all these
+                                    input devices to work in compatibility mode.
+                                </p>
+                                <p>Such compatibility mode is less flexible as working with HID Raw devices, as some
+                                    vendor-specific key
+                                    (e.g. fn button) may only be captured before OS processing (HID RAW), not after (via
+                                    EVDEV). </p>
+                                <div class="row" style="margin-bottom: 0">
+                                    <form>
+                                        <div class="input-field col s12 m10 l6">
+                                            <h6>Keyboard Input Devices To Run In Compatibility Mode:</h6>
+                                            <table>
+                                                <thead>
+                                                <th>Device Name</th>
+                                                <th>Compatibility Mode</th>
+                                                </thead>
+                                                <tbody id="compatilibilityDevicesList"></tbody>
+                                            </table>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </div>
             <div id="bluetoothDevices" class="col s12">
                 <div class="section">
                     <h5>Pair devices</h5>
-                    <a class="waves-effect waves-light btn" id="startScanningButton"><i class="material-icons left">bluetooth_searching</i>Start Scanning</a>
-                    <a class="waves-effect waves-light btn" id="stopScanningButton"><i class="material-icons left">bluetooth_disabled</i>Stop Scanning</a>
-                    <a class="waves-effect waves-light btn" id="startDiscoverableButton"><i class="material-icons left">bluetooth_searching</i>Make Discoverable</a>
-                    <a class="waves-effect waves-light btn" id="stopDiscoverableButton"><i class="material-icons left">bluetooth_disabled</i>Make Not Discoverable</a>
+                    <a class="waves-effect waves-light btn" id="startScanningButton"><i class="material-icons left">bluetooth_searching</i>Start
+                        Scanning</a>
+                    <a class="waves-effect waves-light btn" id="stopScanningButton"><i class="material-icons left">bluetooth_disabled</i>Stop
+                        Scanning</a>
+                    <a class="waves-effect waves-light btn" id="startDiscoverableButton"><i class="material-icons left">bluetooth_searching</i>Make
+                        Discoverable</a>
+                    <a class="waves-effect waves-light btn" id="stopDiscoverableButton"><i class="material-icons left">bluetooth_disabled</i>Make
+                        Not Discoverable</a>
                     <table>
                         <thead>
-                            <th>Device</th>
-                            <th>Address</th>
-                            <th></th>
+                        <th>Device</th>
+                        <th>Address</th>
+                        <th></th>
                         </thead>
                         <tbody id="bluetoothDevicesList"></tbody>
                     </table>
@@ -103,7 +155,9 @@
                         <label for="newPassword2">Repeat new password</label>
                     </div>
                 </div>
-                <button class="waves-effect waves-light btn" id="setPasswordButton" type="submit" name="action">Set password</button>
+                <button class="waves-effect waves-light btn" id="setPasswordButton" type="submit" name="action">Set
+                    password
+                </button>
             </form>
         </div>
     </div>
@@ -135,7 +189,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="waves-effect waves-light btn" id="modalLoginButton" type="submit" name="login">Login</button>
+                <button class="waves-effect waves-light btn" id="modalLoginButton" type="submit" name="login">Login
+                </button>
             </div>
         </div>
     </form>
@@ -143,7 +198,7 @@
 
 <script type="text/javascript" src="js/materialize.min.js"></script>
 <script>
-    $(document).ready(function(){
+    $(document).ready(function () {
         var m = new Main();
         m.init();
     })

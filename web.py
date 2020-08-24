@@ -50,6 +50,7 @@ class Web:
         self.app.router.add_route('GET', '/authorised', self.handler_is_authorised)
         self.app.router.add_route('POST', '/setdevicecapture', self.set_device_capture)
         self.app.router.add_route('POST', '/setdevicefilter', self.set_device_filter)
+        self.app.router.add_route('POST', '/setcompatibilitydevice', self.set_compatibility_device)
         self.app.router.add_route('POST', '/startscanning', self.start_scanning)
         self.app.router.add_route('POST', '/stopscanning', self.stop_scanning)
         self.app.router.add_route('POST', '/startdiscoverable', self.start_discoverable)
@@ -130,6 +131,15 @@ class Web:
         filter = data['filter']
         self.hid_devices.set_device_filter(device_id, filter)
         return web.Response()
+
+    async def set_compatibility_device(self, request):
+        await check_authorized(request)
+        data = await request.post()
+        device_path = data['device_path']
+        compatibility_state = data['compatibility_state'].lower() == 'true'
+        self.hid_devices.set_compatibility_device(device_path, compatibility_state)
+        return web.Response()
+
 
     async def start_scanning(self, request):
         await check_authorized(request)

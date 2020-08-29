@@ -34,6 +34,7 @@ sudo pip3 install aiohttp-security
 sudo pip3 install aiohttp-session
 sudo pip3 install watchgod
 sudo pip3 install hid-tools
+sudo pip3 install python3-pyudev
 
 cd /home/pi/bthidhub/install/on_rpi
 git clone https://github.com/ruundii/bluez

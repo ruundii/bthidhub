@@ -7,6 +7,8 @@ from hid_devices import *
 from bluetooth_devices import *
 import asyncio
 import concurrent.futures
+import sys
+import subprocess
 
 from aiohttp_session import SimpleCookieStorage, session_middleware
 from aiohttp_security import check_authorized, \
@@ -46,6 +48,8 @@ class Web:
         self.app = web.Application(middlewares=[middleware])
         self.app.router.add_route('*', '/', self.root_handler)
         self.app.router.add_route('POST', '/changepassword', self.change_password_handler)
+        self.app.router.add_route('POST', '/restartservice', self.restart_service_handler)
+        self.app.router.add_route('POST', '/reboot', self.reboot_handler)
         self.app.router.add_route('POST', '/login', self.handler_login)
         self.app.router.add_route('GET', '/authorised', self.handler_is_authorised)
         self.app.router.add_route('POST', '/setdevicecapture', self.set_device_capture)
@@ -111,6 +115,14 @@ class Web:
         if not set_new_password(PI_USER, new_password):
             return web.HTTPError
         return web.Response(text="Password successfully changed")
+
+    async def restart_service_handler(self, request):
+        await check_authorized(request)
+        sys.exit(1)
+
+    async def reboot_handler(self, request):
+        await check_authorized(request)
+        subprocess.Popen(['reboot'])
 
     async def get_hid_devices_handler(self, request):
         await check_authorized(request)

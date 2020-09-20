@@ -6,6 +6,7 @@ import json
 from watchgod import awatch, AllWatcher
 import asyncio
 import evdev
+import time
 from hid_message_filter import HIDMessageFilter
 from a1314_message_filter import A1314MessageFilter
 from mouse_message_filter import MouseMessageFilter
@@ -66,8 +67,28 @@ class HIDDevice:
             return
         if tm == b'\xff':
             self.device_registry.bluetooth_devices.switch_host()
+            self.indicate_switch_with_mouse_movement()
         else:
             self.device_registry.bluetooth_devices.send_message(tm, True, False)
+
+    def indicate_switch_with_mouse_movement(self):
+        """Move mouse in circular direction so user can see which host is active now"""
+        for i in range(3):
+            # Up
+            self.move_mouse(b'\x00\xF0\xFE')
+            time.sleep(0.05)
+            # Right
+            self.move_mouse(b'\x10\x00\x00')
+            time.sleep(0.05)
+            # Down
+            self.move_mouse(b'\x00\x00\x01')
+            time.sleep(0.05)
+            # Left
+            self.move_mouse(b'\xEF\x0F\x00')
+            time.sleep(0.05)
+
+    def move_mouse(self, xy):
+        self.device_registry.bluetooth_devices.send_message(b'\xa1\x03\x00\x00\x00\x00' + xy, True, False)
 
     async def send_message(self, msg):
         tm = self.filter.filter_message_from_host(msg)

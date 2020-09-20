@@ -65,6 +65,8 @@ class Main{
         $('#stopScanningButton').on('click', e => {that.changeScanningMode(false);});
         $('#startDiscoverableButton').on('click', e => {that.changeDiscoverableMode(true);});
         $('#stopDiscoverableButton').on('click', e => {that.changeDiscoverableMode(false);});
+        $('#restartServiceButton').on('click', e => {that.restartService();});
+        $('#rebootButton').on('click', e => {that.rebootRaspberry();});
 
         this.scanning = false;
         this.setScanningState();
@@ -345,6 +347,26 @@ class Main{
                 M.toast({html: "Could not make"+(mode ? "":" not")+" discoverable. "+errorThrown, classes:"red"});
                 that.discoverable = !mode;
                 that.setDiscoverableState();
+            }
+        });
+    }
+
+    restartService(){
+        $.ajax({
+            url: "http://" + location.hostname + ":8080/restartservice",
+            type: 'POST', cache:false, contentType: false, processData: false,
+            error: function (jqXHR, textStatus, errorThrown){
+                M.toast({html: "Restarting service, reload this page..."});
+            }
+        });
+    }
+
+    rebootRaspberry(){
+        $.ajax({
+            url: "http://" + location.hostname + ":8080/reboot",
+            type: 'POST', cache:false, contentType: false, processData: false,
+            error: function (jqXHR, textStatus, errorThrown){
+                M.toast({html: "Rebooting Raspberry, reload this page..."});
             }
         });
     }

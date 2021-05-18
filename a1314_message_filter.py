@@ -1,5 +1,6 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 
+from typing import Optional
 
 from hid_message_filter import HIDMessageFilter
 
@@ -37,14 +38,15 @@ class A1314MessageFilter(HIDMessageFilter):
     #LeftControl: 0 | LeftShift: 0 | LeftAlt: 0 | Left GUI: 0 | RightControl: 0 | RightShift: 0 | RightAlt: 0 | Right GUI: 0 | # |Keyboard ['00', '00', '00', '00', '00', '00']
 
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.is_fn_pressed = False
         self.is_eject_pressed = False
         self.last_regular_report = bytearray(b'\x01\x00\x00\x00\x00\x00\x00\x00\x00')
 
-    def filter_message_to_host(self, msg):
-        if len(msg)<1:
+    def filter_message_to_host(self, msg: bytes) -> Optional[bytes]:
+        if len(msg) < 1:
             return None
+
         result_report = bytearray(msg)
         if msg[0] == 0x11:
             result_report = self.last_regular_report
@@ -117,5 +119,5 @@ class A1314MessageFilter(HIDMessageFilter):
         self.last_regular_report = result_report
         return b'\xa1'+bytes(result_report)
 
-    def filter_message_from_host(self, msg):
+    def filter_message_from_host(self, msg: bytes) -> bytes:
         return msg[1:]

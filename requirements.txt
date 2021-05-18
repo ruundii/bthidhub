@@ -1,0 +1,11 @@
+aiohttp<3.7,>=3.8
+aiohttp-security
+aiohttp-session
+asyncio_glib
+dasbus
+evdev
+hid-tools
+mypy>=0.810,<0.820
+PyGObject
+pyudev
+watchgod

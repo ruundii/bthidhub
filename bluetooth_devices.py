@@ -209,12 +209,7 @@ class BluetoothDeviceRegistry:
 
     def is_slave(self, device_address: str) -> bool:
         with os.popen('sudo hcitool con') as stream:
-            #return any("SLAVE" in l and device_address in l for l in stream.readlines())
-            for line in stream.readlines():
-                if line.find(device_address) >= 0:
-                    if line.find("SLAVE") >= 0:
-                        return True
-        return False
+            return any("SLAVE" in l and device_address in l for l in stream.readlines())
 
     def remove_devices(self) -> None:
         print("Removing all BT devices")

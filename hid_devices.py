@@ -163,10 +163,11 @@ class DeviceDirWatcher(AllWatcher):
 class HIDDeviceRegistry:
     def __init__(self, loop: asyncio.AbstractEventLoop):
         self.loop = loop
-        if os.path.exists(DEVICES_CONFIG_FILE_NAME):
-            with open(DEVICES_CONFIG_FILE_NAME, 'r') as devices_config:
-                self.devices_config: Dict[str, Dict[str, object]] = json.loads(devices_config.read())
-        else: self.devices_config = {}
+        try:
+            with open(DEVICES_CONFIG_FILE_NAME) as devices_config:
+                self.devices_config: Dict[str, Dict[str, object]] = json.load(devices_config)
+        except:
+            self.devices_config = {}
         self.devices: List[_Device] = []
         self.capturing_devices: Dict[str, HIDDevice] = {}
         self.input_devices: List[_InputDevice] = []
@@ -293,7 +294,7 @@ class HIDDeviceRegistry:
 
     def __save_config(self) -> None:
         with open(DEVICES_CONFIG_FILE_NAME, 'w') as devices_config_file:
-            devices_config_file.write(json.dumps(self.devices_config))
+            json.dump(self.devices_config, devices_config_file)
 
     def __is_configured_capturing_device(self, device_id: str) -> bool:
         if device_id in self.devices_config:

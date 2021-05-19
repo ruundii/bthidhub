@@ -1,16 +1,21 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 
-from dasbus.connection import SystemMessageBus
-from web import Web
 import asyncio
+import sys
+from signal import SIGINT
+
 import asyncio_glib
+from dasbus.connection import SystemMessageBus
+
 from adapter import BluetoothAdapter
-from hid_devices import *
 from bluetooth_devices import *
+from hid_devices import *
+from web import Web
 
 if __name__ == "__main__":
     asyncio.set_event_loop_policy(asyncio_glib.GLibEventLoopPolicy())
     loop = asyncio.get_event_loop()
+    loop.add_signal_handler(SIGINT, sys.exit)
     bus = SystemMessageBus()
     bluetooth_devices = BluetoothDeviceRegistry(bus, loop)
     hid_devices = HIDDeviceRegistry(loop)

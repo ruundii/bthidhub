@@ -11,7 +11,7 @@ Linux/Mac:
   5) Run: ssh pi@[rpi-ip-address] 'bash -s' < setup.sh
      Default password is 'raspberry'
 
-That last step may take around an hour to complete.
+That last step could take an hour to complete.
 When the RPi reboots, the LED will switch off once the service is ready to use.
 
 Finally, go to the [rpi-ip-address]:8080 for the web configuration interface

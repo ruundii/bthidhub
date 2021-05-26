@@ -61,6 +61,8 @@ class BluetoothDevice:
             self.sockets_connected = True
             if(self.is_host):
                 self.device_registry.connected_hosts.append(self)
+                addr = self.object_path[-17:].replace("_",":")
+                asyncio.create_task(self.device_registry.switch_to_master(addr))
             else:
                 self.device_registry.connected_devices.append(self)
             print("Connected sockets for ",self.object_path)

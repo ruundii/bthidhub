@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, List, NewType, IO, TypeVar
+from typing import Tuple, Dict, Generic, List, NewType, IO, TypeVar
 
 _T = TypeVar("_T")
 
@@ -20,7 +20,7 @@ File = IO
 ObjPath = NewType('ObjPath', str)
 
 
-class Variant: ...
+class Variant(Generic[_T]): ...
 
 
-def unwrap_variant(variant: Variant) -> str: ...
+def unwrap_variant(variant: Variant[_T]) -> _T: ...

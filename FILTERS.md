@@ -148,3 +148,5 @@ FILTER_INSTANCES = {
 ```
 
 Then we can select the "Contour" option in the web interface in order to enable the filter.
+
+The same techniques can be used to remap events when you just want to change the behaviour of a device.

@@ -29,7 +29,7 @@ sudo pip3 install asyncio
 sudo pip3 install asyncio_glib
 sudo pip3 install evdev
 sudo pip3 install PyGObject
-sudo pip3 install aiohttp==3.6.2
+sudo pip3 install aiohttp>=3.8
 sudo pip3 install aiohttp-security
 sudo pip3 install aiohttp-session
 sudo pip3 install watchgod

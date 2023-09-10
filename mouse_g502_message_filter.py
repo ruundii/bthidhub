@@ -48,6 +48,6 @@ class G502MessageFilter(MouseMessageFilter):
     # then 8 bits of wheel -127 to 127
     # then AC pan
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.message_size = 8
 

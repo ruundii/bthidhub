@@ -23,19 +23,7 @@ systemctl --user disable obex
 systemctl --user mask obex
 
 sudo apt-get install git libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf automake libtool python3-pip -y
-
-sudo pip3 install dasbus
-sudo pip3 install asyncio
-sudo pip3 install asyncio_glib
-sudo pip3 install evdev
-sudo pip3 install PyGObject
-sudo pip3 install aiohttp>=3.8
-sudo pip3 install aiohttp-security
-sudo pip3 install aiohttp-session
-sudo pip3 install watchgod
-sudo pip3 install hid-tools
-sudo pip3 install pyudev
-sudo pip3 install bitarray
+sudo pip3 install -r /home/pi/bthidhub/requirements.txt
 
 cd /home/pi/bthidhub/install/on_rpi
 git clone https://github.com/ruundii/bluez
@@ -65,5 +53,10 @@ sudo systemctl start remapper.service
 
 sudo hostnamectl set-hostname bthidhub
 sudo sed -Ei 's/^127\.0\.1\.1.*$/127.0.1.1\tbthidhub/' /etc/hosts
+
+# Compile some Python modules to reduce lag.
+# We do this at the end, as the project is already usable without this step.
+cd /home/pi/bthidhub/
+mypyc
 
 sudo reboot

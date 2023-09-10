@@ -1,2 +1,8 @@
 /commands
 .idea
+*.so
+__pycache__/
+build/
+install/on_rpi/bluez/
+devices_config.json
+*~

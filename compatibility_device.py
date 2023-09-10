@@ -1,7 +1,8 @@
-from evdev import *
-from hidtools.uhid import UHIDDevice
 import asyncio
 from typing import List
+
+from evdev import InputDevice, categorize, ecodes
+from hidtools.uhid import UHIDDevice
 
 CONSUMER_KEYS_EVENT_TO_USAGE_FLAG_MAPPING = {
     ecodes.KEY_NEXTSONG : 0x01, # Usage (Scan Next Track)
@@ -137,14 +138,14 @@ NORMAL_KEYS_EVENT_TO_USAGE_FLAG_MAPPING = {
 }
 
 class CompatibilityModeDevice:
-    def __init__(self, loop: asyncio.AbstractEventLoop, device_path):
+    def __init__(self, loop: asyncio.AbstractEventLoop, device_path: str):
         self.device_path = device_path
         self.loop = loop
         self.ev_device = InputDevice(device_path)
         self.ev_device.grab()
         self.hidraw_device = UHIDDevice()
         self.hidraw_device.name = "BT HID Hub Virtual Hid Raw Keyboard"
-        self.hidraw_device.info = [0x06, 0x0001, 0x0001]  # 0x06 - BUS_VIRTUAL, vendor id 1 product id 1
+        self.hidraw_device.info = (0x06, 0x0001, 0x0001)  # 0x06 - BUS_VIRTUAL, vendor id 1 product id 1
         self.hidraw_device.phys = "0"
         self.hidraw_device.rdesc = bytearray.fromhex(
             "05010906a1018501050719e029e715002501750195088102950175088103950575010508190129059102950175039103950675081500256d05071900296d8100c0050C0901A1018502050C150025017501950709B509B609B709CD09E209E909EA810295018101C0")
@@ -155,9 +156,9 @@ class CompatibilityModeDevice:
         asyncio.run_coroutine_threadsafe(self.__read_events(),self.loop)
         print("Compatibility Device ",self.device_path," initialised")
 
-    async def __read_events(self):
+    async def __read_events(self) -> None:
         async for ev in self.ev_device.async_read_loop():
-            if ev.type == ecodes.EV_KEY and ev.value<2:
+            if ev.type == ecodes.EV_KEY and ev.value < 2:
                 print(categorize(ev))
                 if ev.code in CONSUMER_KEYS_EVENT_TO_USAGE_FLAG_MAPPING:
                     if ev.value == 1:  # down
@@ -177,13 +178,13 @@ class CompatibilityModeDevice:
                             self.pressed_keys.remove(ev.code)
                     self.__send_normal_hid_report()
 
-    def __send_consumer_hid_report(self):
+    def __send_consumer_hid_report(self) -> None:
         report = bytearray(b'\x02\x80') #first byte - report id 2, second byte - consumer key flags and one bit is constant (0x80)
         for code in self.pressed_consumer_keys:
             report[1] = report[1] | CONSUMER_KEYS_EVENT_TO_USAGE_FLAG_MAPPING[code]
         self.hidraw_device.call_input_event(report)
 
-    def __send_normal_hid_report(self):
+    def __send_normal_hid_report(self) -> None:
         report = bytearray(b'\x01\x00\x00\x00\x00\x00\x00\x00\x00') #first byte - report id 1, then 1 byte with modifier key flags, then const byte with 0, then 6 bytes with up to 6 keycodes (0 to 109)
         key_index = 3
         for code in self.pressed_keys:
@@ -196,17 +197,19 @@ class CompatibilityModeDevice:
 
         self.hidraw_device.call_input_event(report)
 
-    def __eq__(self, other):
-        return self.device_path == other.device_path
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, CompatibilityModeDevice):
+            return self.device_path == other.device_path
+        return False
 
-    def finalise(self):
+    def finalise(self) -> None:
         #close device
         self.hidraw_device.destroy()
-        self.hidraw_device = None
+        del self.hidraw_device
         self.ev_device.ungrab()
         self.ev_device.close()
-        self.ev_device = None
+        del self.ev_device
         print("Compatibility Device ",self.device_path," finalised")
 
-    def __del__(self):
+    def __del__(self) -> None:
         print("Compatibility Device ",self.device_path," removed")

@@ -1,0 +1,23 @@
+name: CI
+
+on: [pull_request, push]
+
+jobs:
+  mypy:
+    name: Mypy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install libgirepository
+      run: sudo apt install -y libgirepository1.0-dev
+    - name: Install dependencies
+      uses: py-actions/py-dependency-install@v2
+      with:
+        path: requirements.txt
+    - name: Run mypy
+      run: mypy

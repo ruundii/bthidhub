@@ -1,13 +1,31 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 
-from dasbus.connection import SystemMessageBus
-from agent import Agent
-import dasbus.typing as dt
-from bluetooth_devices import *
-from hid_devices import *
-from mouse import *
-from web import Web
+import asyncio
 from datetime import datetime, timedelta
+from typing import Awaitable, Callable, Dict, List, Optional
+
+from dasbus.connection import InterfaceProxy, SystemMessageBus
+import dasbus.typing as dt
+
+from agent import Action, Agent
+from bluetooth_devices import BluetoothDeviceRegistry, INPUT_DEVICE_INTERFACE, INPUT_HOST_INTERFACE
+from hid_devices import HIDDeviceRegistry
+
+
+"""class _Device(TypedDict):
+    path: str
+    address: str
+    alias: str
+    paired: bool
+    trusted: bool
+    connected: bool
+    host: bool
+class _GetDevices(TypedDict):
+    devices: List[Dict[str, str]]
+    scanning: bool"""
+_Device = Dict[str, object]
+_GetDevices = Dict[str, object]
+
 
 DBUS_PATH_PROFILE = '/ruundii/btkb_profile'
 DBUS_PATH_AGENT = '/ruundii/btkb_agent'
@@ -19,25 +37,27 @@ OBJECT_MANAGER_INTERFACE = 'org.freedesktop.DBus.ObjectManager'
 DEVICE_NAME = 'Bluetooth HID Hub - RPi'
 UUID = '00001124-0000-1000-8000-00805f9b34fb'
 
+
 class BluetoothAdapter:
-    def __init__(self, bus:SystemMessageBus, loop: asyncio.AbstractEventLoop, bluetooth_devices:BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):
+    adapter: Optional[InterfaceProxy]
+
+    def __init__(self, bus: SystemMessageBus, loop: asyncio.AbstractEventLoop,
+                 bluetooth_devices: BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):
         self.bus = bus
         self.loop = loop
         self.bluetooth_devices = bluetooth_devices
         self.hid_devices = hid_devices
-        self.mouse = Mouse(self.loop, self.bluetooth_devices)
         self.agent_published = False
-        self.agent = None
+        self.agent: Optional[Agent] = None
         self.om_proxy_initialised = False
         self.initialising_adapter = False
-        self.scan_start_time = None
-        self.discoverable_start_time = None
-        self.on_agent_action_handler = None
-        self.on_interface_changed_handler = None
+        self.scan_start_time: Optional[datetime] = None
+        self.discoverable_start_time: Optional[datetime] = None
+        self.on_agent_action_handler: Optional[Callable[[Action], Awaitable[None]]] = None
+        self.on_interface_changed_handler: Optional[Callable[[], Awaitable[None]]] = None
         asyncio.run_coroutine_threadsafe(self.init(), loop=self.loop)
 
-
-    async def init(self):
+    async def init(self) -> None:
         await self.wait_bt_service_run()
         if not self.om_proxy_initialised:
             om = self.bus.get_proxy(service_name="org.bluez", object_path="/", interface_name=OBJECT_MANAGER_INTERFACE)
@@ -46,7 +66,7 @@ class BluetoothAdapter:
             self.om_proxy_initialised = True
         self.wait_till_adapter_present_then_init_sync()
 
-    def bt_service_running(self):
+    def bt_service_running(self) -> bool:
         try:
             om = self.bus.get_proxy(service_name= "org.bluez", object_path="/", interface_name=OBJECT_MANAGER_INTERFACE)
             om.GetManagedObjects()
@@ -54,25 +74,25 @@ class BluetoothAdapter:
         except:
             return False
 
-    async def wait_bt_service_run(self):
+    async def wait_bt_service_run(self) -> None:
         while not self.bt_service_running():
             print("No BT service. Waiting...")
             await asyncio.sleep(2)
 
-    def adapter_exists(self):
+    def adapter_exists(self) -> bool:
         try:
             adapter = self.bus.get_proxy(service_name="org.bluez", object_path=ADAPTER_OBJECT, interface_name=ADAPTER_INTERFACE)
             return adapter.Version == "Hacked"
         except:
             return False
 
-    def wait_till_adapter_present_then_init_sync(self):
+    def wait_till_adapter_present_then_init_sync(self) -> None:
         if self.initialising_adapter:
             return # already initing
         self.initialising_adapter = True
         asyncio.run_coroutine_threadsafe(self.wait_till_adapter_present_then_init(), loop=self.loop)
 
-    async def wait_till_adapter_present_then_init(self):
+    async def wait_till_adapter_present_then_init(self) -> None:
         while not self.adapter_exists():
             print("No BT adapter. Waiting...")
             await asyncio.sleep(2)
@@ -99,11 +119,11 @@ class BluetoothAdapter:
         self.initialising_adapter = False
 
 
-    def interfaces_added(self, obj_name, interfaces):
+    def interfaces_added(self, obj_name: str, interfaces: List[str]) -> None:
         self.on_interface_changed()
         if not self.adapter_exists():
             return
-        if(obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
+        if (obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
             print("Bluetooth adapter added. Starting")
             self.wait_till_adapter_present_then_init_sync()
 
@@ -113,8 +133,7 @@ class BluetoothAdapter:
         elif INPUT_DEVICE_INTERFACE in interfaces:
             self.bluetooth_devices.add_device(obj_name, False)
 
-
-    def interfaces_removed(self, obj_name, interfaces):
+    def interfaces_removed(self, obj_name: str, interfaces: List[str]) -> None:
         if(obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
             self.adapter = None
             self.bluetooth_devices.remove_devices()
@@ -124,8 +143,7 @@ class BluetoothAdapter:
             self.bluetooth_devices.remove_device(obj_name)
         self.on_interface_changed()
 
-
-    def register_agent(self):
+    def register_agent(self) -> None:
         if not self.agent_published:
             self.agent = Agent()
             self.agent.set_on_agent_action_handler(self.on_agent_action)
@@ -137,19 +155,19 @@ class BluetoothAdapter:
             agent_manager.RequestDefaultAgent(DBUS_PATH_AGENT)
             print("Agent registered")
 
-    def start_scan(self):
+    def start_scan(self) -> None:
         if self.adapter is not None:
             #self.adapter.SetDiscoveryFilter({"UUIDs":dt.get_variant(dt.List[dt.Str], [UUID])})
             self.scan_start_time = datetime.now()
             self.adapter.StartDiscovery()
             asyncio.run_coroutine_threadsafe(self.__shutdown_scanning(), loop=self.loop)
 
-    def stop_scan(self):
+    def stop_scan(self) -> None:
         if self.adapter is not None:
             self.adapter.StopDiscovery()
             #self.adapter.SetDiscoveryFilter({})
 
-    async def __shutdown_scanning(self):
+    async def __shutdown_scanning(self) -> None:
         while self.adapter is not None \
                 and self.adapter.Discovering \
                 and self.scan_start_time is not None \
@@ -158,18 +176,18 @@ class BluetoothAdapter:
         if self.adapter is not None and self.adapter.Discovering:
             self.stop_scan()
 
-    def start_discoverable(self):
+    def start_discoverable(self) -> None:
         if self.adapter is not None:
             self.discoverable_start_time = datetime.now()
             self.discoverable = True
             self.discoverable_timeout = 0
             asyncio.run_coroutine_threadsafe(self.__shutdown_discoverable(), loop=self.loop)
 
-    def stop_discoverable(self):
+    def stop_discoverable(self) -> None:
         if self.adapter is not None:
             self.discoverable = False
 
-    async def __shutdown_discoverable(self):
+    async def __shutdown_discoverable(self) -> None:
         while self.adapter is not None \
                 and self.discoverable \
                 and self.discoverable_start_time is not None \
@@ -178,16 +196,16 @@ class BluetoothAdapter:
         if self.adapter is not None and self.discoverable:
             self.discoverable = False
 
-    def agent_request_confirmation_response(self, device, passkey, confirmed):
+    def agent_request_confirmation_response(self, device: str, passkey: str, confirmed: bool) -> None:
         if self.agent_published and self.agent is not None:
             self.agent.request_confirmation_response(device, passkey, confirmed)
 
-    def get_devices(self):
+    def get_devices(self) -> _GetDevices:
         if self.adapter is None:
-            return {"devices":[], "scanning": False }
+            return {"devices": [], "scanning": False }
         om = self.bus.get_proxy(service_name="org.bluez", object_path="/", interface_name=OBJECT_MANAGER_INTERFACE)
         objs = om.GetManagedObjects()
-        devices = []
+        devices: List[_Device] = []
         for path in objs:
             obj = objs[path]
             if DEVICE_INTERFACE in obj:
@@ -201,10 +219,9 @@ class BluetoothAdapter:
                     "connected": dt.unwrap_variant(dev["Connected"]),
                     "host"     : INPUT_HOST_INTERFACE in obj
                 })
-        return {"devices": devices, "scanning":self.adapter.Discovering}
+        return {"devices": devices, "scanning": self.adapter.Discovering}
 
-    def device_action(self, action, device_path):
-
+    def device_action(self, action: str, device_path: str) -> None:
         if self.adapter is None:
             return
         dp = self.bus.get_proxy(service_name="org.bluez", object_path=device_path, interface_name=DEVICE_INTERFACE)
@@ -223,7 +240,7 @@ class BluetoothAdapter:
             print(exc)
         self.on_interface_changed()
 
-    def remove_device(self, device_path):
+    def remove_device(self, device_path: str) -> None:
         if self.adapter is None:
             return
         try:
@@ -231,7 +248,7 @@ class BluetoothAdapter:
         except Exception as exc:
             print(exc)
 
-    def cancel_pairing(self, device_path):
+    def cancel_pairing(self, device_path: str) -> None:
         if self.adapter is None:
             return
         try:
@@ -240,50 +257,64 @@ class BluetoothAdapter:
         except:
             pass
 
-    def set_on_agent_action_handler(self, handler):
+    def set_on_agent_action_handler(self, handler: Callable[[Action], Awaitable[None]]) -> None:
         self.on_agent_action_handler = handler
 
-    def on_agent_action(self, msg):
+    def on_agent_action(self, msg: Action) -> None:
         if self.on_agent_action_handler is not None:
             asyncio.run_coroutine_threadsafe(self.on_agent_action_handler(msg), loop=self.loop)
 
-
-    def set_on_interface_changed_handler(self, handler):
+    def set_on_interface_changed_handler(self, handler: Callable[[], Awaitable[None]]) -> None:
         self.on_interface_changed_handler = handler
 
-    def on_interface_changed(self):
+    def on_interface_changed(self) -> None:
         if self.on_interface_changed_handler is not None:
             asyncio.run_coroutine_threadsafe(self.on_interface_changed_handler(), loop=self.loop)
 
     @property
-    def powered(self):
+    def powered(self) -> bool:
+        if self.adapter is None:
+            return False
         return self.adapter.Powered
 
     @powered.setter
-    def powered(self, new_value):
+    def powered(self, new_value: bool) -> None:
+        if self.adapter is None:
+            return
         self.adapter.Powered = new_value
 
     @property
-    def alias(self):
+    def alias(self) -> str:
+        if self.adapter is None:
+            return ""
         return self.adapter.Alias
 
     @alias.setter
-    def alias(self, new_value):
+    def alias(self, new_value: str) -> None:
+        if self.adapter is None:
+            return
         self.adapter.Alias = new_value
 
     @property
-    def discoverable(self):
+    def discoverable(self) -> bool:
+        if self.adapter is None:
+            return False
         return self.adapter.Discoverable
 
     @discoverable.setter
-    def discoverable(self, new_value):
+    def discoverable(self, new_value: bool) -> None:
+        if self.adapter is None:
+            return
         self.adapter.Discoverable = new_value
 
     @property
-    def discoverable_timeout(self):
+    def discoverable_timeout(self) -> int:
+        if self.adapter is None:
+            return 0
         return self.adapter.DiscoverableTimeout
 
     @discoverable_timeout.setter
-    def discoverable_timeout(self, new_value):
+    def discoverable_timeout(self, new_value: int) -> None:
+        if self.adapter is None:
+            return
         self.adapter.DiscoverableTimeout = new_value
-

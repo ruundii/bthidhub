@@ -55,22 +55,22 @@ class MX510MessageFilter(MouseMessageFilter):
     # then 8 bits of wheel -127 to 127
     # then x and y from  -2047 to 2047, 12 bits each
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.message_size = 7
 
-    def get_buttons_flags(self, msg):
+    def get_buttons_flags(self, msg: bytes) -> bytes:
         return msg[0:1]+b'\x00'
 
-    def get_x(self, msg):
+    def get_x(self, msg: bytes) -> bytes:
         a = bitarray()
         a.frombytes(msg[4:6])
         return int.to_bytes(ba2int(a[12:16] + a[0:8], signed=True), 2, "little", signed=True)
 
-    def get_y(self, msg):
+    def get_y(self, msg: bytes) -> bytes:
         a = bitarray()
         a.frombytes(msg[5:7])
         return int.to_bytes(ba2int(a[8:16]+a[0:4],signed=True), 2, "little", signed=True)
 
-    def get_wheel(self, msg):
+    def get_wheel(self, msg: bytes) -> bytes:
         return msg[3:4]
 

@@ -1,5 +1,8 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 #
+
+from typing import Optional
+
 from hid_message_filter import HIDMessageFilter
 
 #default mouse filter
@@ -48,26 +51,26 @@ from hid_message_filter import HIDMessageFilter
 
 
 class MouseMessageFilter(HIDMessageFilter):
-    def __init__(self):
+    def __init__(self) -> None:
         self.message_size = 7
 
-    def filter_message_to_host(self, msg):
+    def filter_message_to_host(self, msg: bytes) -> Optional[bytes]:
         if len(msg) != self.message_size:
             return None
         msg = b'\xa1\x03' + self.get_buttons_flags(msg) + self.get_x(msg) + self.get_y(msg) + self.get_wheel(msg)
         return msg
 
-    def get_buttons_flags(self, msg):
+    def get_buttons_flags(self, msg: bytes) -> bytes:
         return msg[0:2]
 
-    def get_x(self, msg):
+    def get_x(self, msg: bytes) -> bytes:
         return msg[2:4]
 
-    def get_y(self, msg):
+    def get_y(self, msg: bytes) -> bytes:
         return msg[4:6]
 
-    def get_wheel(self, msg):
+    def get_wheel(self, msg: bytes) -> bytes:
         return msg[6:7]
 
-    def filter_message_from_host(self, msg):
+    def filter_message_from_host(self, msg: bytes) -> None:
         return None

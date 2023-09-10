@@ -1,10 +1,14 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 
-from dasbus.connection import SystemMessageBus
 import asyncio
 import socket
-from typing import List
 import os
+from typing import Awaitable, Callable, Dict, List, Optional, TYPE_CHECKING
+
+from dasbus.connection import SystemMessageBus
+
+if TYPE_CHECKING:
+    from hid_devices import HIDDeviceRegistry
 
 OBJECT_MANAGER_INTERFACE = 'org.freedesktop.DBus.ObjectManager'
 DEVICE_INTERFACE = 'org.bluez.Device1'
@@ -15,7 +19,9 @@ INPUT_HOST_INTERFACE = 'org.bluez.InputHost1'
 IGNORE_INPUT_DEVICES = True
 
 class BluetoothDevice:
-    def __init__(self, bus : SystemMessageBus, loop: asyncio.AbstractEventLoop,  device_registry, object_path, is_host,  control_socket_path, interrupt_socket_path):
+    def __init__(self, bus: SystemMessageBus, loop: asyncio.AbstractEventLoop,
+                 device_registry: "BluetoothDeviceRegistry", object_path: str,
+                 is_host: bool,  control_socket_path: str, interrupt_socket_path: str):
         self.device = bus.get_proxy(service_name="org.bluez", object_path=object_path, interface_name=DEVICE_INTERFACE)
         self.props = bus.get_proxy(service_name="org.bluez", object_path=object_path, interface_name=PROPERTIES_INTERFACE)
         self.props.PropertiesChanged.connect(self.device_connected_state_changed)
@@ -25,16 +31,16 @@ class BluetoothDevice:
         self.device_registry = device_registry
         self.object_path = object_path
         self.is_host = is_host
-        self.control_socket_path = control_socket_path
-        self.control_socket = None
-        self.interrupt_socket_path = interrupt_socket_path
-        self.interrupt_socket = None
+        self.control_socket_path: Optional[str] = control_socket_path
+        self.control_socket: Optional[socket.socket] = None
+        self.interrupt_socket_path: Optional[str] = interrupt_socket_path
+        self.interrupt_socket: Optional[socket.socket] = None
         self.sockets_connected = False
 
         print("BT Device ",object_path," created")
         asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)
 
-    async def reconcile_connected_state(self, delay):
+    async def reconcile_connected_state(self, delay: int) -> None:
         await asyncio.sleep(delay)
         try:
             if self.connected and not self.sockets_connected:
@@ -44,7 +50,7 @@ class BluetoothDevice:
         except Exception as exc:
             print("Possibly dbus error during reconcile_connected_state ",exc)
 
-    async def connect_sockets(self):
+    async def connect_sockets(self) -> None:
         if self.sockets_connected or self.control_socket_path is None or self.interrupt_socket_path is None:
             return
         print("Connecting sockets for ",self.object_path)
@@ -71,14 +77,16 @@ class BluetoothDevice:
         except Exception as err:
             print("Error while connecting sockets for ",self.object_path,". Will retry in a sec", err)
             try:
-                self.control_socket.close()
-                self.interrupt_socket.close()
+                if self.control_socket is not None:
+                    self.control_socket.close()
+                if self.interrupt_socket is not None:
+                    self.interrupt_socket.close()
             except:
                 pass
             await asyncio.sleep(1)
             asyncio.run_coroutine_threadsafe(self.connect_sockets(), loop=self.loop)
 
-    def disconnect_sockets(self):
+    def disconnect_sockets(self) -> None:
         if self.control_socket is not None:
             self.control_socket.close()
             self.control_socket = None
@@ -94,7 +102,7 @@ class BluetoothDevice:
         print("Disconnected  sockets for ",self.object_path)
 
 
-    async def loop_of_fun(self, is_ctrl):
+    async def loop_of_fun(self, is_ctrl: bool) -> None:
         sock = self.control_socket if is_ctrl else self.interrupt_socket
         while sock is not None:
             try:
@@ -116,59 +124,58 @@ class BluetoothDevice:
 
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.device.Name
 
     @property
-    def alias(self):
+    def alias(self) -> str:
         return self.device.Alias
 
     @property
-    def connected(self):
+    def connected(self) -> bool:
         return self.device.Connected
 
-    def __eq__(self, other):
-        return self.object_path == other.object_path
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, BluetoothDevice):
+            return self.object_path == other.object_path
+        return False
 
-    def device_connected_state_changed(self, arg1,arg2, arg3):
+    def device_connected_state_changed(self, _arg1: object, _arg2: object, _arg3: object) -> None:
         print("device_connected_state_changed")
         asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)
         if self.device_registry.on_devices_changed_handler is not None:
             asyncio.run_coroutine_threadsafe(self.device_registry.on_devices_changed_handler(), loop=self.loop)
 
-    def finalise(self):
+    def finalise(self) -> None:
         self.props.PropertiesChanged.disconnect(self.device_connected_state_changed)
         self.control_socket_path = None
         self.interrupt_socket_path = None
-        #close sockets
+        # Close sockets
         self.disconnect_sockets()
         print("BT Device ",self.object_path," finalised")
 
 
-    def __del__(self):
+    def __del__(self) -> None:
         print("BT Device ",self.object_path," removed")
 
 class BluetoothDeviceRegistry:
-    def __init__(self, bus:SystemMessageBus, loop: asyncio.AbstractEventLoop):
+    def __init__(self, bus: SystemMessageBus, loop: asyncio.AbstractEventLoop):
         self.bus = bus
         self.loop = loop
-        self.all = {}
-        self.connected_hosts = []
-        self.connected_devices = []
-        self.on_devices_changed_handler = None
-        self.hid_devices = None
+        self.all: Dict[str, BluetoothDevice] = {}
+        self.connected_hosts: List[BluetoothDevice] = []
+        self.connected_devices: List[BluetoothDevice] = []
+        self.on_devices_changed_handler: Optional[Callable[[], Awaitable[None]]] = None
+        self.hid_devices: Optional["HIDDeviceRegistry"] = None
         self.current_host_index = 0
 
-
-    def set_hid_devices(self, hid_devices):
+    def set_hid_devices(self, hid_devices: "HIDDeviceRegistry") -> None:
         self.hid_devices = hid_devices
 
-
-    def set_on_devices_changed_handler(self, handler):
+    def set_on_devices_changed_handler(self, handler: Callable[[], Awaitable[None]]) -> None:
         self.on_devices_changed_handler = handler
 
-
-    def add_devices(self):
+    def add_devices(self) -> None:
         print("Adding all BT devices")
         om = self.bus.get_proxy(service_name= "org.bluez", object_path="/", interface_name=OBJECT_MANAGER_INTERFACE)
         objs = om.GetManagedObjects()
@@ -180,8 +187,7 @@ class BluetoothDeviceRegistry:
             elif INPUT_DEVICE_INTERFACE in objs[obj]:
                 self.add_device(obj, False)
 
-
-    def add_device(self, device_object_path, is_host):
+    def add_device(self, device_object_path: str, is_host: bool) -> None:
         if(IGNORE_INPUT_DEVICES and not is_host): return
 
         if device_object_path in self.all:
@@ -193,8 +199,7 @@ class BluetoothDeviceRegistry:
         device = BluetoothDevice(self.bus, self.loop, self, device_object_path, is_host, p.SocketPathCtrl, p.SocketPathIntr)
         self.all[device_object_path] = device
 
-
-    async def switch_to_master(self, device_address):
+    async def switch_to_master(self, device_address: str) -> None:
         print("switch to master called for ", device_address)
         while self.is_slave(device_address):
             try:
@@ -204,23 +209,19 @@ class BluetoothDeviceRegistry:
                 print("hcitool ",device_address," exception:",exc)
             await asyncio.sleep(5)
 
-    def is_slave(self, device_address):
+    def is_slave(self, device_address: str) -> bool:
         with os.popen('sudo hcitool con') as stream:
-            for line in stream.readlines():
-                if line.find(device_address) >= 0:
-                    if line.find("SLAVE") >= 0:
-                        return True
-        return False
+            return any("SLAVE" in l and device_address in l for l in stream.readlines())
 
-    def remove_devices(self):
+    def remove_devices(self) -> None:
         print("Removing all BT devices")
         while len(self.all) >0:
             self.remove_device(list(self.all)[0])
 
 
-    def remove_device(self, device_object_path):
+    def remove_device(self, device_object_path: str) -> None:
         if device_object_path not in self.all:
-            return #no such device
+            return  # No such device
         device = self.all[device_object_path]
         del self.all[device_object_path]
         list = self.connected_hosts if device.is_host else self.connected_devices
@@ -229,18 +230,15 @@ class BluetoothDeviceRegistry:
         device.finalise()
         del device
 
-
-    def switch_host(self):
+    def switch_host(self) -> None:
         self.current_host_index = (self.current_host_index + 1) % len(self.connected_hosts)
 
-
-    def __get_current_host_as_list(self):
+    def __get_current_host_as_list(self) -> List[BluetoothDevice]:
         if len(self.connected_hosts) <= self.current_host_index:
             return []
         return [self.connected_hosts[self.current_host_index]]
 
-
-    def send_message(self, msg, send_to_hosts, is_control_channel):
+    def send_message(self, msg: bytes, send_to_hosts: bool, is_control_channel: bool) -> None:
         if IGNORE_INPUT_DEVICES and not send_to_hosts and not is_control_channel and self.hid_devices is not None:
             asyncio.run_coroutine_threadsafe(self.hid_devices.send_message_to_devices(msg), loop=self.loop)
             return
@@ -248,7 +246,8 @@ class BluetoothDeviceRegistry:
         for target in list(targets):
             try:
                 socket = target.control_socket if is_control_channel else target.interrupt_socket
-                socket.sendall(msg)
+                if socket is not None:
+                    socket.sendall(msg)
             except Exception:
                 print("Cannot send data to socket of ",target.object_path,". Closing")
                 if target is not None:
@@ -257,5 +256,3 @@ class BluetoothDeviceRegistry:
                     except:
                         print("Error while trying to disconnect sockets")
                 asyncio.run_coroutine_threadsafe(target.reconcile_connected_state(1), loop=self.loop)
-
-

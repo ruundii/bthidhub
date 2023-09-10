@@ -1,14 +1,14 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 
-class HIDMessageFilter:
+from typing import Optional
 
-    def filter_message_to_host(self, msg):
+class HIDMessageFilter:
+    def filter_message_to_host(self, msg: bytes) -> Optional[bytes]:
         if len(msg) == 8:
             return b'\xa1\x01' + msg
-        else:
-            return b'\xa1' + msg
-        return msg
+
+        return b'\xa1' + msg
 
 
-    def filter_message_from_host(self, msg):
+    def filter_message_from_host(self, msg: bytes) -> Optional[bytes]:
         return msg[1:]

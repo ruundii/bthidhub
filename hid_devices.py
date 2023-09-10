@@ -171,7 +171,7 @@ class HIDDeviceRegistry:
         try:
             with open(DEVICES_CONFIG_FILE_NAME) as devices_config:
                 self.devices_config: Dict[str, Dict[str, object]] = json.load(devices_config)
-        except:
+        except Exception:
             self.devices_config = {}
         self.devices: List[_Device] = []
         self.capturing_devices: Dict[str, HIDDevice] = {}

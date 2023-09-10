@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Awaitable, Callable, Dict, List, Optional
+from typing import Awaitable, Callable, Optional, TypedDict, cast
 
 from dasbus.connection import InterfaceProxy, SystemMessageBus
 import dasbus.typing as dt
@@ -12,7 +12,7 @@ from bluetooth_devices import BluetoothDeviceRegistry, INPUT_DEVICE_INTERFACE, I
 from hid_devices import HIDDeviceRegistry
 
 
-"""class _Device(TypedDict):
+class _Device(TypedDict):
     path: str
     address: str
     alias: str
@@ -20,11 +20,11 @@ from hid_devices import HIDDeviceRegistry
     trusted: bool
     connected: bool
     host: bool
+
+
 class _GetDevices(TypedDict):
-    devices: List[Dict[str, str]]
-    scanning: bool"""
-_Device = Dict[str, object]
-_GetDevices = Dict[str, object]
+    devices: list[_Device]
+    scanning: bool
 
 
 DBUS_PATH_PROFILE = '/ruundii/btkb_profile'
@@ -119,7 +119,7 @@ class BluetoothAdapter:
         self.initialising_adapter = False
 
 
-    def interfaces_added(self, obj_name: str, interfaces: List[str]) -> None:
+    def interfaces_added(self, obj_name: str, interfaces: list[str]) -> None:
         self.on_interface_changed()
         if not self.adapter_exists():
             return
@@ -133,7 +133,7 @@ class BluetoothAdapter:
         elif INPUT_DEVICE_INTERFACE in interfaces:
             self.bluetooth_devices.add_device(obj_name, False)
 
-    def interfaces_removed(self, obj_name: str, interfaces: List[str]) -> None:
+    def interfaces_removed(self, obj_name: str, interfaces: list[str]) -> None:
         if(obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
             self.adapter = None
             self.bluetooth_devices.remove_devices()
@@ -205,18 +205,18 @@ class BluetoothAdapter:
             return {"devices": [], "scanning": False }
         om = self.bus.get_proxy(service_name="org.bluez", object_path="/", interface_name=OBJECT_MANAGER_INTERFACE)
         objs = om.GetManagedObjects()
-        devices: List[_Device] = []
+        devices: list[_Device] = []
         for path in objs:
             obj = objs[path]
             if DEVICE_INTERFACE in obj:
                 dev = obj[DEVICE_INTERFACE]
                 devices.append({
                     "path"    : path,
-                    "address" : dt.unwrap_variant(dev["Address"]),
-                    "alias": dt.unwrap_variant(dev["Alias"]),
-                    "paired": dt.unwrap_variant(dev["Paired"]),
-                    "trusted": dt.unwrap_variant(dev["Trusted"]),
-                    "connected": dt.unwrap_variant(dev["Connected"]),
+                    "address" : cast(str, dt.unwrap_variant(dev["Address"])),
+                    "alias": cast(str, dt.unwrap_variant(dev["Alias"])),
+                    "paired": cast(bool, dt.unwrap_variant(dev["Paired"])),
+                    "trusted": cast(bool, dt.unwrap_variant(dev["Trusted"])),
+                    "connected": cast(bool, dt.unwrap_variant(dev["Connected"])),
                     "host"     : INPUT_HOST_INTERFACE in obj
                 })
         return {"devices": devices, "scanning": self.adapter.Discovering}

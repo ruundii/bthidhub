@@ -3,7 +3,7 @@
 import asyncio
 import socket
 import os
-from typing import Awaitable, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Awaitable, Callable, Optional, TYPE_CHECKING
 
 from dasbus.connection import SystemMessageBus
 
@@ -162,9 +162,9 @@ class BluetoothDeviceRegistry:
     def __init__(self, bus: SystemMessageBus, loop: asyncio.AbstractEventLoop):
         self.bus = bus
         self.loop = loop
-        self.all: Dict[str, BluetoothDevice] = {}
-        self.connected_hosts: List[BluetoothDevice] = []
-        self.connected_devices: List[BluetoothDevice] = []
+        self.all: dict[str, BluetoothDevice] = {}
+        self.connected_hosts: list[BluetoothDevice] = []
+        self.connected_devices: list[BluetoothDevice] = []
         self.on_devices_changed_handler: Optional[Callable[[], Awaitable[None]]] = None
         self.hid_devices: Optional["HIDDeviceRegistry"] = None
         self.current_host_index = 0
@@ -233,7 +233,7 @@ class BluetoothDeviceRegistry:
     def switch_host(self) -> None:
         self.current_host_index = (self.current_host_index + 1) % len(self.connected_hosts)
 
-    def __get_current_host_as_list(self) -> List[BluetoothDevice]:
+    def __get_current_host_as_list(self) -> list[BluetoothDevice]:
         if len(self.connected_hosts) <= self.current_host_index:
             return []
         return [self.connected_hosts[self.current_host_index]]
@@ -242,7 +242,7 @@ class BluetoothDeviceRegistry:
         if IGNORE_INPUT_DEVICES and not send_to_hosts and not is_control_channel and self.hid_devices is not None:
             asyncio.run_coroutine_threadsafe(self.hid_devices.send_message_to_devices(msg), loop=self.loop)
             return
-        targets: List[BluetoothDevice] = self.__get_current_host_as_list() if send_to_hosts else self.connected_devices
+        targets: list[BluetoothDevice] = self.__get_current_host_as_list() if send_to_hosts else self.connected_devices
         for target in list(targets):
             try:
                 socket = target.control_socket if is_control_channel else target.interrupt_socket

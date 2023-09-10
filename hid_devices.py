@@ -7,7 +7,7 @@ import os
 import json
 import re
 import time
-from typing import Awaitable, Callable, Dict, List, Optional, cast
+from typing import Awaitable, Callable, Literal, Optional, TypedDict, cast
 
 import evdev
 from watchgod import awatch, AllWatcher
@@ -19,16 +19,19 @@ from hid_message_filter import HIDMessageFilter
 from mouse_g502_message_filter import G502MessageFilter
 from mouse_message_filter import MouseMessageFilter
 from mouse_mx510_message_filter import MX510MessageFilter
-from typing import Dict, List
 
 
-# TODO PY38: Swap below code and remove all casts.
-"""class _Device(TypedDict):
+class __Device(TypedDict, total=False):
+    capture: bool
+    filter: str
+
+
+class _Device(__Device):
     id: str
     instance: str
     name: str
     hidraw: str
-    events: List[str]
+    events: list[str]
     compatibility_mode: bool
 
 
@@ -38,20 +41,22 @@ class _InputDevice(TypedDict):
     phys: str
     compatibility_mode: bool
 
+
 class _HIDDevices(TypedDict):
-    devices: List[_Device]
-    filters: List[Dict[str, str]]
-    input_devices: List[_InputDevice]
-"""
-_Device = Dict[str, object]
-_InputDevice = Dict[str, object]
-_HIDDevices = Dict[str, List[Dict[str, object]]]
+    devices: list[_Device]
+    filters: list[dict[str, str]]
+    input_devices: list[_InputDevice]
+
+
+class _DeviceConfig(TypedDict, total=False):
+    capture: bool
+    filter: str
 
 
 DEVICES_CONFIG_FILE_NAME = 'devices_config.json'
 DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY = 'compatibility_devices'
-CAPTURE_ELEMENT = 'capture'
-FILTER_ELEMENT = 'filter'
+CAPTURE_ELEMENT: Literal['capture'] = 'capture'
+FILTER_ELEMENT: Literal['filter'] = 'filter'
 
 FILTERS = [
     {"id":"Default", "name":"Default"},
@@ -74,8 +79,8 @@ class HIDDevice:
         self.device_id = device["instance"]
         self.device_class = device["id"]
         self.name = device["name"]
-        self.hidraw = cast(str, device["hidraw"])
-        self.events = cast(List[str], device["events"])
+        self.hidraw = device["hidraw"]
+        self.events = device["events"]
         self.events_devices = []
         for event in self.events:
             event_device = evdev.InputDevice('/dev/input/'+event)
@@ -170,13 +175,13 @@ class HIDDeviceRegistry:
         self.loop = loop
         try:
             with open(DEVICES_CONFIG_FILE_NAME) as devices_config:
-                self.devices_config: Dict[str, Dict[str, object]] = json.load(devices_config)
+                self.devices_config: dict[str, _DeviceConfig] = json.load(devices_config)
         except Exception:
             self.devices_config = {}
-        self.devices: List[_Device] = []
-        self.capturing_devices: Dict[str, HIDDevice] = {}
-        self.input_devices: List[_InputDevice] = []
-        self.compatibility_mode_devices: Dict[str, CompatibilityModeDevice] = {}
+        self.devices: list[_Device] = []
+        self.capturing_devices: dict[str, HIDDevice] = {}
+        self.input_devices: list[_InputDevice] = []
+        self.compatibility_mode_devices: dict[str, CompatibilityModeDevice] = {}
         asyncio.run_coroutine_threadsafe(self.__watch_device_changes(), loop=self.loop)
         self.on_devices_changed_handler: Optional[Callable[[], Awaitable[None]]] = None
         self.__scan_devices()
@@ -224,7 +229,7 @@ class HIDDeviceRegistry:
             comp_device.finalise()
             del comp_device
 
-        devs: List[_Device] = []
+        devs: list[_Device] = []
         devs_dict = {}
         devs_in_compatibility_mode = []
         for device in os.listdir('/sys/bus/hid/devices'):
@@ -242,7 +247,7 @@ class HIDDeviceRegistry:
                         input_events = [e for e in os.listdir('/sys/bus/hid/devices/' + device + '/input/'+input) if e.startswith('event')]
                         for event in input_events:
                             for input_device in self.input_devices:
-                                if input_device["compatibility_mode"] and cast(str, input_device["path"]).find(event)>=0:
+                                if input_device["compatibility_mode"] and input_device["path"].find(event)>=0:
                                     compatibility_mode = True
                                     break
                         events.extend(input_events)
@@ -266,9 +271,9 @@ class HIDDeviceRegistry:
             del hid_device
 
         for dev_dict in devs:
-            if dev_dict["instance"] not in self.capturing_devices and self.__is_configured_capturing_device(cast(str, dev_dict["id"])) and dev_dict["instance"] not in devs_in_compatibility_mode:
+            if dev_dict["instance"] not in self.capturing_devices and self.__is_configured_capturing_device(dev_dict["id"]) and dev_dict["instance"] not in devs_in_compatibility_mode:
                 #create capturing device
-                self.capturing_devices[cast(str, dev_dict["instance"])] = HIDDevice(dev_dict, self.__get_configured_device_filter(cast(str, dev_dict["id"])), self.loop, self)
+                self.capturing_devices[dev_dict["instance"]] = HIDDevice(dev_dict, self.__get_configured_device_filter(dev_dict["id"]), self.loop, self)
         self.devices = devs
 
 
@@ -291,9 +296,9 @@ class HIDDeviceRegistry:
         if DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY not in self.devices_config:
             self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY] = []  # type: ignore[assignment]
         if compatibility_state and device_path not in self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY]:
-            cast(List[str], self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY]).append(device_path)
+            cast(list[str], self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY]).append(device_path)
         elif not compatibility_state and device_path in self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY]:
-            cast(List[str], self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY]).remove(device_path)
+            cast(list[str], self.devices_config[DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY]).remove(device_path)
         self.__save_config()
         self.__scan_devices()
 
@@ -304,23 +309,23 @@ class HIDDeviceRegistry:
     def __is_configured_capturing_device(self, device_id: str) -> bool:
         if device_id in self.devices_config:
             if CAPTURE_ELEMENT in self.devices_config[device_id]:
-                return cast(bool, self.devices_config[device_id][CAPTURE_ELEMENT])
+                return self.devices_config[device_id][CAPTURE_ELEMENT]
         return False
 
     def __get_configured_device_filter(self, device_id: str) -> HIDMessageFilter:
         if device_id in self.devices_config:
             if FILTER_ELEMENT in self.devices_config[device_id]:
-                filter_id = cast(str, self.devices_config[device_id][FILTER_ELEMENT])
+                filter_id = self.devices_config[device_id][FILTER_ELEMENT]
                 return FILTER_INSTANCES[filter_id]
         return FILTER_INSTANCES["Default"]
 
     def get_hid_devices_with_config(self) -> _HIDDevices:
         for device in self.devices:
             if device["id"] in self.devices_config:
-                if CAPTURE_ELEMENT in self.devices_config[cast(str, device["id"])]:
-                    device[CAPTURE_ELEMENT] = self.devices_config[cast(str, device["id"])][CAPTURE_ELEMENT]
+                if CAPTURE_ELEMENT in self.devices_config[device["id"]]:
+                    device[CAPTURE_ELEMENT] = self.devices_config[device["id"]][CAPTURE_ELEMENT]
                 else:
                     device[CAPTURE_ELEMENT] = False
-                if FILTER_ELEMENT in self.devices_config[cast(str, device["id"])]:
-                    device[FILTER_ELEMENT] =  self.devices_config[cast(str, device["id"])][FILTER_ELEMENT]
-        return {"devices": self.devices, "filters": cast(List[Dict[str, object]], FILTERS), "input_devices": self.input_devices}
+                if FILTER_ELEMENT in self.devices_config[device["id"]]:
+                    device[FILTER_ELEMENT] =  self.devices_config[device["id"]][FILTER_ELEMENT]
+        return {"devices": self.devices, "filters": FILTERS, "input_devices": self.input_devices}

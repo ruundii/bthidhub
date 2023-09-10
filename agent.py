@@ -2,20 +2,19 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional, TypedDict
 
 import dasbus.typing as dt
 from dasbus.server.interface import dbus_interface
 from dasbus.connection import SystemMessageBus
 
 
-"""class Action(TypedDict, total=False):
+class Action(TypedDict, total=False):
     action: str
     device: dt.ObjPath
     entered: dt.UInt16
-    passkey: dt.UInt32
-    pincode: str"""
-Action = Dict[str, object]
+    passkey: str
+    pincode: str
 
 
 bus = SystemMessageBus()
@@ -65,11 +64,6 @@ class Agent(object):
         set_trusted(device)
         passkey = int(ask("Enter passkey: "))
         return dt.UInt32(passkey)
-
-    def DisplayPasskey(self, device: dt.ObjPath, passkey: dt.UInt32, entered: dt.UInt16) -> None:
-        print("DisplayPasskey (%s, %06u entered %u)" %
-              (device, passkey, entered))
-        self.on_agent_action({'action':'display_passkey', 'passkey':passkey, 'device':device, 'entered':entered})
 
     def DisplayPinCode(self, device: dt.ObjPath, pincode: dt.Str) -> None:
         print("DisplayPinCode (%s, %s)" % (device, pincode))

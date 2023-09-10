@@ -2,6 +2,7 @@ aiohttp!=3.7.*
 aiohttp-security
 aiohttp-session
 asyncio_glib
+bitarray  # TODO: remove
 dasbus
 evdev
 hid-tools

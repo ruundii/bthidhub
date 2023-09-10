@@ -233,7 +233,7 @@ class HIDDeviceRegistry:
                     m = re.search('HID_NAME\s*=(.+)', uevent.read())
                     if m is None:
                         continue
-                    name = m.group(1)
+                    name: str = m.group(1)
                     hidraw = os.listdir('/sys/bus/hid/devices/'+device+'/hidraw')[0]
                     inputs = os.listdir('/sys/bus/hid/devices/'+device+'/input')
                     events = []

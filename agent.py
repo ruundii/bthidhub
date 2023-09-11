@@ -34,7 +34,7 @@ def dev_connect(device_path: str) -> None:
 # Decorator won't work with compiled class as it depends on introspection.
 # If you update anything in this class, then uncomment the below line, and add a
 # print(self.__dbus_xml__) into the init method. Then copy and paste the updated string
-# to replace the one hardcoded one below.
+# to replace the hardcoded one below.
 #@dbus_interface("org.bluez.Agent1")
 class Agent:
     def __init__(self) -> None:

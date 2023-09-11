@@ -31,14 +31,17 @@ def dev_connect(device_path: str) -> None:
     device.Connect()
 
 
-@dbus_interface("org.bluez.Agent1")
-class Agent(object):
-    __dbus_xml__: str
-
+# Decorator won't work with compiled class as it depends on introspection.
+# If you update anything in this class, then uncomment the below line, and add a
+# print(self.__dbus_xml__) into the init method. Then copy and paste the updated string
+# to replace the one hardcoded one below.
+#@dbus_interface("org.bluez.Agent1")
+class Agent:
     def __init__(self) -> None:
         self.on_agent_action_handler: Optional[Callable[[Action], None]] = None
         self.request_confirmation_device: Optional[dt.ObjPath] = None
         self.request_confirmation_passkey: Optional[str] = None
+        self.__dbus_xml__ = '<node><!--Specifies Agent--><interface name="org.bluez.Agent1"><method name="AuthorizeService"><arg name="device" type="o" direction="in" /><arg name="uuid" type="s" direction="in" /></method><method name="Cancel" /><method name="DisplayPinCode"><arg name="device" type="o" direction="in" /><arg name="pincode" type="s" direction="in" /></method><method name="Release" /><method name="RequestAuthorization"><arg name="device" type="o" direction="in" /></method><method name="RequestConfirmation"><arg name="device" type="o" direction="in" /><arg name="passkey" type="u" direction="in" /></method><method name="RequestPasskey"><arg name="device" type="o" direction="in" /><arg name="return" type="u" direction="out" /></method><method name="RequestPinCode"><arg name="device" type="o" direction="in" /><arg name="return" type="s" direction="out" /></method></interface></node>'
 
     def Release(self) -> None:
         self.on_agent_action({'action':'agent_released'})

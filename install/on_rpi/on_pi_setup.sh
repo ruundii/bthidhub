@@ -20,7 +20,7 @@ systemctl --user stop obex
 systemctl --user disable obex
 systemctl --user mask obex
 
-sudo apt-get install git libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf automake libtool python3-pip -y
+sudo apt-get install libcairo2-dev libdbus-1-dev libgirepository1.0-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev autoconf automake libtool python3-pip -y
 sudo pip3 install -r /home/pi/bthidhub/requirements.txt
 
 cd /home/pi/bthidhub/install/on_rpi

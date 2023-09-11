@@ -146,7 +146,7 @@ class CompatibilityModeDevice:
         self.hidraw_device.name = "BT HID Hub Virtual Hid Raw Keyboard"
         self.hidraw_device.info = (0x06, 0x0001, 0x0001)  # 0x06 - BUS_VIRTUAL, vendor id 1 product id 1
         self.hidraw_device.phys = "0"
-        self.hidraw_device.rdesc = bytearray.fromhex(
+        self.hidraw_device.rdesc = bytearray.fromhex(  # type: ignore[assignment]
             "05010906a1018501050719e029e715002501750195088102950175088103950575010508190129059102950175039103950675081500256d05071900296d8100c0050C0901A1018502050C150025017501950709B509B609B709CD09E209E909EA810295018101C0")
         self.pressed_keys: list[int] = []
         self.pressed_consumer_keys: list[int] = []
@@ -204,10 +204,8 @@ class CompatibilityModeDevice:
     def finalise(self) -> None:
         #close device
         self.hidraw_device.destroy()
-        del self.hidraw_device
         self.ev_device.ungrab()
         self.ev_device.close()
-        del self.ev_device
         print("Compatibility Device ",self.device_path," finalised")
 
     def __del__(self) -> None:

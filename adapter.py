@@ -1,6 +1,7 @@
 # Copyright (c) 2020 ruundii. All rights reserved.
 
 import asyncio
+from collections.abc import Container
 from datetime import datetime, timedelta
 from typing import Awaitable, Callable, Optional, TypedDict, cast
 
@@ -119,7 +120,7 @@ class BluetoothAdapter:
         self.initialising_adapter = False
 
 
-    def interfaces_added(self, obj_name: str, interfaces: list[str]) -> None:
+    def interfaces_added(self, obj_name: str, interfaces: Container[str]) -> None:
         self.on_interface_changed()
         if not self.adapter_exists():
             return
@@ -133,13 +134,13 @@ class BluetoothAdapter:
         elif INPUT_DEVICE_INTERFACE in interfaces:
             self.bluetooth_devices.add_device(obj_name, False)
 
-    def interfaces_removed(self, obj_name: str, interfaces: list[str]) -> None:
-        if(obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
+    def interfaces_removed(self, obj_name: str, interfaces: Container[str]) -> None:
+        if (obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
             self.adapter = None
             self.bluetooth_devices.remove_devices()
             print("Bluetooth adapter removed. Stopping")
             asyncio.run_coroutine_threadsafe(self.init(), loop=self.loop)
-        elif INPUT_HOST_INTERFACE in interfaces or  INPUT_DEVICE_INTERFACE in interfaces:
+        elif INPUT_HOST_INTERFACE in interfaces or INPUT_DEVICE_INTERFACE in interfaces:
             self.bluetooth_devices.remove_device(obj_name)
         self.on_interface_changed()
 

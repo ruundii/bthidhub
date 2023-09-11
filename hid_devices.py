@@ -236,26 +236,25 @@ class HIDDeviceRegistry:
             try:
                 with open('/sys/bus/hid/devices/'+device+'/uevent', 'r') as uevent:
                     m = re.search('HID_NAME\s*=(.+)', uevent.read())
-                    if m is None:
-                        continue
-                    name: str = m.group(1)
-                    hidraw = os.listdir('/sys/bus/hid/devices/'+device+'/hidraw')[0]
-                    inputs = os.listdir('/sys/bus/hid/devices/'+device+'/input')
-                    events = []
-                    compatibility_mode = False
-                    for input in inputs:
-                        input_events = [e for e in os.listdir('/sys/bus/hid/devices/' + device + '/input/'+input) if e.startswith('event')]
-                        for event in input_events:
-                            for input_device in self.input_devices:
-                                if input_device["compatibility_mode"] and input_device["path"].find(event)>=0:
-                                    compatibility_mode = True
-                                    break
-                        events.extend(input_events)
+                    if m is not None:
+                        name: str = m.group(1)
+                        hidraw = os.listdir('/sys/bus/hid/devices/'+device+'/hidraw')[0]
+                        inputs = os.listdir('/sys/bus/hid/devices/'+device+'/input')
+                        events = []
+                        compatibility_mode = False
+                        for input in inputs:
+                            input_events = [e for e in os.listdir('/sys/bus/hid/devices/' + device + '/input/'+input) if e.startswith('event')]
+                            for event in input_events:
+                                for input_device in self.input_devices:
+                                    if input_device["compatibility_mode"] and input_device["path"].find(event)>=0:
+                                        compatibility_mode = True
+                                        break
+                            events.extend(input_events)
 
-                    id = device.split('.')[0]
-                    devs.append({"id":id, "instance":device, "name":name, "hidraw": hidraw, "events":events, "compatibility_mode":compatibility_mode})
-                    devs_dict[device] = id
-                    if compatibility_mode: devs_in_compatibility_mode.append(device)
+                        id = device.split('.')[0]
+                        devs.append({"id":id, "instance":device, "name":name, "hidraw": hidraw, "events":events, "compatibility_mode":compatibility_mode})
+                        devs_dict[device] = id
+                        if compatibility_mode: devs_in_compatibility_mode.append(device)
             except Exception as exc:
                 print("Error while loading HID device: ", device, ", Error: ", exc,", Skipping.")
         devs_to_remove = []

@@ -139,7 +139,7 @@ class Main{
             },
             error: function (jqXHR, textStatus, errorThrown){
                 M.toast({html: "Failed to load connected devices list. "+errorThrown, classes:"red"});
-                that.updateHIDDevices();
+                setTimeout(that.updateHIDDevices, 1000);
             }
         });
     }
@@ -282,7 +282,7 @@ class Main{
             },
             error: function (jqXHR, textStatus, errorThrown){
                 M.toast({html: "Failed to load update bluetooth devices list. "+errorThrown, classes:"red"});
-                that.updateListOfBluetoothDevices();
+                setTimeout(that.updateListOfBluetoothDevices, 1000);
             }
         });
     }

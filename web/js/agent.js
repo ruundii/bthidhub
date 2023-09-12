@@ -50,7 +50,7 @@ class Agent{
             $('.modal').modal({dismissible:false,
                 onOpenStart: function () {
                     that.currentDevice = data['device'];
-                    this.passkey= data['passkey'];
+                    that.passkey = data['passkey'];
                     $('#modalPopupHeader')[0].innerHTML = "Pair to host?";
                     $('#modalPopupTextBefore')[0].innerHTML = "Confirm you see the same passkey on host:";
                     $('#modalPopupLargeText')[0].innerHTML = data['passkey'];

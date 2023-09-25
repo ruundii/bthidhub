@@ -9,4 +9,4 @@ hid-tools!=0.4
 mypy==1.5.1
 PyGObject
 pyudev
-watchgod
+watchfiles

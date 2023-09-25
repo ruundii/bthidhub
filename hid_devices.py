@@ -10,7 +10,7 @@ import time
 from typing import Awaitable, Callable, Literal, Optional, TypedDict, cast
 
 import evdev
-from watchgod import awatch, AllWatcher
+from watchfiles import awatch
 
 from a1314_message_filter import A1314MessageFilter
 from bluetooth_devices import BluetoothDeviceRegistry
@@ -165,11 +165,6 @@ class HIDDevice:
         print("HID Device ",self.device_id," removed")
 
 
-class DeviceDirWatcher(AllWatcher):
-    def should_watch_dir(self, entry: os.DirEntry[str]) -> bool:
-        return entry.path.count('/') == 3
-
-
 class HIDDeviceRegistry:
     def __init__(self, loop: asyncio.AbstractEventLoop):
         self.loop = loop
@@ -198,7 +193,7 @@ class HIDDeviceRegistry:
             await device.send_message(msg)
 
     async def __watch_device_changes(self) -> None:
-        async for changes in awatch('/dev/input', watcher_cls=DeviceDirWatcher):
+        async for changes in awatch("/dev/input/", recursive=False):
             self.__scan_devices()
             if self.on_devices_changed_handler is not None:
                 await self.on_devices_changed_handler()

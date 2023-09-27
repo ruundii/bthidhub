@@ -3,6 +3,7 @@
 import asyncio
 import socket
 import os
+from subprocess import DEVNULL, PIPE
 from typing import Awaitable, Callable, Optional, TYPE_CHECKING
 
 from dasbus.connection import SystemMessageBus
@@ -201,17 +202,19 @@ class BluetoothDeviceRegistry:
 
     async def switch_to_master(self, device_address: str) -> None:
         print("switch to master called for ", device_address)
-        while self.is_slave(device_address):
+        while await self.is_slave(device_address):
             try:
-                success = os.system("sudo hcitool sr " + device_address + " MASTER") == 0
-                print("hcitool ",device_address," success:",success)
+                proc = await asyncio.create_subprocess_exec("sudo", "hcitool", "sr", device_address, "MASTER", stdout=DEVNULL)
+                await proc.wait()
+                print("hcitool ", device_address, " success:", proc.returncode == 0)
             except Exception as exc:
                 print("hcitool ",device_address," exception:",exc)
             await asyncio.sleep(5)
 
-    def is_slave(self, device_address: str) -> bool:
-        with os.popen('sudo hcitool con') as stream:
-            return any("SLAVE" in l and device_address in l for l in stream.readlines())
+    async def is_slave(self, device_address: str) -> bool:
+        proc = await asyncio.create_subprocess_exec("sudo", "hcitool", "con", stdout=PIPE, stderr=DEVNULL)
+        stdout, stderr = await proc.communicate()
+        return any("SLAVE" in l and device_address in l for l in stdout.split(b"\n"))
 
     def remove_devices(self) -> None:
         print("Removing all BT devices")

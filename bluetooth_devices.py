@@ -214,7 +214,7 @@ class BluetoothDeviceRegistry:
     async def is_slave(self, device_address: str) -> bool:
         proc = await asyncio.create_subprocess_exec("sudo", "hcitool", "con", stdout=PIPE, stderr=DEVNULL)
         stdout, stderr = await proc.communicate()
-        return any("SLAVE" in l and device_address in l for l in stdout.split(b"\n"))
+        return any("SLAVE" in l and device_address in l for l in stdout.decode().split("\n"))
 
     def remove_devices(self) -> None:
         print("Removing all BT devices")

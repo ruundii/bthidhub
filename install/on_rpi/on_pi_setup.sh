@@ -38,7 +38,7 @@ sudo make install
 sudo python3 $HOME/bthidhub/install/on_rpi/config_replacer.py
 sudo cp $HOME/bthidhub/install/on_rpi/sdp_record.xml /etc/bluetooth/sdp_record.xml
 sudo cp $HOME/bthidhub/install/on_rpi/input.conf /etc/bluetooth/input.conf
-sudo cp $HOMR/bthidhub/install/on_rpi/main.conf /etc/bluetooth/main.conf
+sudo cp $HOME/bthidhub/install/on_rpi/main.conf /etc/bluetooth/main.conf
 
 sudo cp $HOME/bthidhub/install/on_rpi/remapper.service /lib/systemd/system/remapper.service
 sudo chmod 644 /lib/systemd/system/remapper.service

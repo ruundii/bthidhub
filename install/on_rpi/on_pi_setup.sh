@@ -41,6 +41,7 @@ sudo cp $HOME/bthidhub/install/on_rpi/input.conf /etc/bluetooth/input.conf
 sudo cp $HOME/bthidhub/install/on_rpi/main.conf /etc/bluetooth/main.conf
 
 sudo sed -i "s/\/home\/pi/\/home\/$(basename $HOME)/g" $HOME/bthidhub/install/on_rpi/remapper.service
+sudo sed -i "s/PI_USER = 'pi'/PI_USER = '$(basename $HOME)'/g" $HOME/bthidhub/web.py
 sudo cp $HOME/bthidhub/install/on_rpi/remapper.service /lib/systemd/system/remapper.service
 sudo chmod 644 /lib/systemd/system/remapper.service
 sudo systemctl daemon-reload

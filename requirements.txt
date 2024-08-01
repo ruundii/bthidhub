@@ -6,7 +6,7 @@ bitarray  # TODO: remove
 dasbus
 evdev
 hid-tools>=0.7
-mypy==1.10.1
+mypy==1.11.1
 PyGObject
 pyudev
 watchfiles

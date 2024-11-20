@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internet G.C</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            text-align: justify;
+            color: #555;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenido a Internet G.C</h1>
+        <p>
+            Al aceptar, autorizas a Internet G.C a recopilar datos básicos de tu dispositivo, como modelo, sistema operativo, navegador y dirección IP. 
+            Esta información será usada exclusivamente por el dueño de esta página con fines de monitoreo.
+        </p>
+        <form action="https://G.C tas bien guey.com" method="POST">
+            <button type="submit">Acepto Términos y Condiciones</button>
+        </form>
+    </div>
+</body>
+</html>

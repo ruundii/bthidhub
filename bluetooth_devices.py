@@ -38,7 +38,7 @@ class BluetoothDevice:
         self.interrupt_socket_path: Optional[str] = interrupt_socket_path
         self.interrupt_socket: Optional[socket.socket] = None
         self.sockets_connected = False
-        self._tasks: set[asyncio.Task[None]] = set()
+        self._tasks: set[asyncio.Future[None]] = set()
 
         print("BT Device ",object_path," created")
         asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)

@@ -75,8 +75,8 @@ class BluetoothDevice:
             else:
                 self.device_registry.connected_devices.append(self)
             print("Connected sockets for ",self.object_path)
-            self.tasks.add(asyncio.run_coroutine_threadsafe(self.loop_of_fun(True), loop=self.loop))
-            self.tasks.add(asyncio.run_coroutine_threadsafe(self.loop_of_fun(False), loop=self.loop))
+            self._tasks.add(asyncio.run_coroutine_threadsafe(self.loop_of_fun(True), loop=self.loop))
+            self._tasks.add(asyncio.run_coroutine_threadsafe(self.loop_of_fun(False), loop=self.loop))
         except Exception as err:
             print("Error while connecting sockets for ",self.object_path,". Will retry in a sec", err)
             try:
@@ -90,7 +90,7 @@ class BluetoothDevice:
             asyncio.run_coroutine_threadsafe(self.connect_sockets(), loop=self.loop)
 
     def disconnect_sockets(self) -> None:
-        for t in self.tasks:
+        for t in self._tasks:
             t.cancel()
             with suppress(asyncio.CancelledError):
                 await t

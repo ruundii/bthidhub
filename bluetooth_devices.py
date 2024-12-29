@@ -3,6 +3,7 @@
 import asyncio
 import socket
 import os
+from contextlib import suppress
 from subprocess import DEVNULL, PIPE
 from typing import Awaitable, Callable, Optional, TYPE_CHECKING
 
@@ -37,6 +38,7 @@ class BluetoothDevice:
         self.interrupt_socket_path: Optional[str] = interrupt_socket_path
         self.interrupt_socket: Optional[socket.socket] = None
         self.sockets_connected = False
+        self._tasks = set()
 
         print("BT Device ",object_path," created")
         asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)
@@ -73,8 +75,8 @@ class BluetoothDevice:
             else:
                 self.device_registry.connected_devices.append(self)
             print("Connected sockets for ",self.object_path)
-            asyncio.run_coroutine_threadsafe(self.loop_of_fun(True), loop=self.loop)
-            asyncio.run_coroutine_threadsafe(self.loop_of_fun(False), loop=self.loop)
+            self.tasks.add(asyncio.run_coroutine_threadsafe(self.loop_of_fun(True), loop=self.loop))
+            self.tasks.add(asyncio.run_coroutine_threadsafe(self.loop_of_fun(False), loop=self.loop))
         except Exception as err:
             print("Error while connecting sockets for ",self.object_path,". Will retry in a sec", err)
             try:
@@ -88,6 +90,11 @@ class BluetoothDevice:
             asyncio.run_coroutine_threadsafe(self.connect_sockets(), loop=self.loop)
 
     def disconnect_sockets(self) -> None:
+        for t in self.tasks:
+            t.cancel()
+            with suppress(asyncio.CancelledError):
+                await t
+
         if self.control_socket is not None:
             self.control_socket.close()
             self.control_socket = None

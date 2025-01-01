@@ -93,8 +93,9 @@ class BluetoothDevice:
     async def disconnect_sockets(self) -> None:
         for t in self._tasks:
             t.cancel()
-            with suppress(asyncio.CancelledError):
-                await t
+            # TODO: Reenable if we manage to turn this into tasks (i.e. not use coroutine_threasfe).
+            #with suppress(asyncio.CancelledError):
+            #    await t
 
         if self.control_socket is not None:
             self.control_socket.close()

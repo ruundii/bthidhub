@@ -37,7 +37,7 @@ sudo systemctl stop bluetooth
 sudo make install
 sudo python3 $HOME/bthidhub/install/on_rpi/config_replacer.py
 sudo cp $HOME/bthidhub/sdp_record_template.xml /etc/bluetooth/sdp_record.xml
-sudo sed -i 's/{}/00/' /etc/bluetooth/sdp_record.xml
+sudo sed -i 's/{}//' /etc/bluetooth/sdp_record.xml
 sudo cp $HOME/bthidhub/install/on_rpi/input.conf /etc/bluetooth/input.conf
 sudo cp $HOME/bthidhub/install/on_rpi/main.conf /etc/bluetooth/main.conf
 

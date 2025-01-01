@@ -69,7 +69,7 @@ class Web:
 
         self.runner = None
         self.site = None
-        self.ws = []
+        self.ws = set()
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         #web.run_app(self.app)
         asyncio.run_coroutine_threadsafe(self.start_server(), loop=self.loop)
@@ -90,7 +90,11 @@ class Web:
 
     async def on_hid_devices_change(self):
         for ws in self.ws:
-            await ws.send_json({'msg': 'hid_devices_updated'})
+            try:
+                await asyncio.wait_for(ws.send_json({"msg": "hid_devices_updated"}), 5)
+            except (asyncio.TimeoutError, RuntimeError):
+                self.ws.discard(ws)
+                await ws.close()
 
     async def on_bluetooth_devices_change(self):
         for ws in self.ws:
@@ -203,36 +207,38 @@ class Web:
         ws = web.WebSocketResponse()
         await ws.prepare(request)
 
-        async for msg in ws:
-            if msg.type == web.WSMsgType.TEXT:
-                data = json.loads(msg.data)
-                if 'msg' in data:
-                    if data['msg'] == 'close' or data['msg'] == 'shutdown':
-                        self.ws.remove(ws)
-                        await ws.close()
-                    elif data['msg'] == 'connect':
-                        self.ws.append(ws)
-                        await ws.send_json({'msg':'connected'})
-                        print('websocket connection opened')
-                    elif data['msg'] == 'cancel_pairing':
-                        self.adapter.cancel_pairing(data['device'])
-                    elif data['msg'] == 'request_confirmation_response':
-                        self.adapter.agent_request_confirmation_response(data['device'], data['passkey'], data['confirmed'])
-                    elif data['msg'] == 'pair_device':
-                        print("pairing")
-                        self.loop.run_in_executor(self.executor, self.adapter.device_action, 'pair', data['device'])
-                        print("pairing end")
-                    elif data['msg'] == 'connect_device':
-                        self.loop.run_in_executor(self.executor, self.adapter.device_action, 'connect', data['device'])
-                    elif data['msg'] == 'disconnect_device':
-                        self.loop.run_in_executor(self.executor, self.adapter.device_action, 'disconnect', data['device'])
-                    elif data['msg'] == 'remove_device':
-                        self.loop.run_in_executor(self.executor, self.adapter.remove_device, data['device'])
-                    else:
-                        pass
-                        #await ws.send_json({'msg':'connected'})
-            elif msg.type == web.WSMsgType.ERROR:
-                print('ws connection closed with exception %s' %
-                      ws.exception())
+        self.ws.add(ws)
+        try:
+            async for msg in ws:
+                if msg.type == web.WSMsgType.TEXT:
+                    data = json.loads(msg.data)
+                    if 'msg' in data:
+                        if data['msg'] == 'close' or data['msg'] == 'shutdown':
+                            await ws.close()
+                        elif data['msg'] == 'connect':
+                            await ws.send_json({'msg':'connected'})
+                            print('websocket connection opened')
+                        elif data['msg'] == 'cancel_pairing':
+                            self.adapter.cancel_pairing(data['device'])
+                        elif data['msg'] == 'request_confirmation_response':
+                            self.adapter.agent_request_confirmation_response(data['device'], data['passkey'], data['confirmed'])
+                        elif data['msg'] == 'pair_device':
+                            print("pairing")
+                            self.loop.run_in_executor(self.executor, self.adapter.device_action, 'pair', data['device'])
+                            print("pairing end")
+                        elif data['msg'] == 'connect_device':
+                            self.loop.run_in_executor(self.executor, self.adapter.device_action, 'connect', data['device'])
+                        elif data['msg'] == 'disconnect_device':
+                            self.loop.run_in_executor(self.executor, self.adapter.device_action, 'disconnect', data['device'])
+                        elif data['msg'] == 'remove_device':
+                            self.loop.run_in_executor(self.executor, self.adapter.remove_device, data['device'])
+                        else:
+                            pass
+                            #await ws.send_json({'msg':'connected'})
+                elif msg.type == web.WSMsgType.ERROR:
+                    print('ws connection closed with exception %s' %
+                          ws.exception())
+        finally:
+            self.ws.discard(ws)
         print('websocket connection closed')
         return ws

@@ -55,7 +55,7 @@ class _DeviceConfig(TypedDict, total=False):
     capture: bool
     descriptor: str
     filter: str
-    mapped_ids: dict[Optional[str], int]
+    mapped_ids: dict[Optional[int], int]
 
 
 DEVICES_CONFIG_FILE_NAME = 'devices_config.json'
@@ -113,7 +113,7 @@ def _HIDIOCGRDESC(fd: int) -> "array.array[int]":
 
 
 class HIDDevice:
-    mapped_ids: dict[int, bytes]
+    mapped_ids: dict[Optional[int], bytes]
 
     def __init__(self, device: _Device, filter: HIDMessageFilter,
                  loop: asyncio.AbstractEventLoop, device_registry: HIDDeviceRegistry):
@@ -135,7 +135,7 @@ class HIDDevice:
         print("HID Device ",self.device_id," created")
         desc = "".join(f"{b:02x}" for b in _HIDIOCGRDESC(self.hidraw_file))
         # Replace report IDs, so they can be remapped later.
-        self.internal_ids = tuple(cast(str, m[1]) for m in REPORT_ID_PATTERN.findall(desc))
+        self.internal_ids = tuple(m[1] for m in cast(list[str], REPORT_ID_PATTERN.findall(desc)))
         self.descriptor, found = REPORT_ID_PATTERN.subn(r"\1{}", desc)
         # Or insert one if no report ID exists.
         if found == 0:

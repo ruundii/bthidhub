@@ -13,6 +13,7 @@ from hid_devices import *
 from web import Web
 
 if __name__ == "__main__":
+    sys.stdout = sys.stderr
     asyncio.set_event_loop_policy(asyncio_glib.GLibEventLoopPolicy())
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(SIGINT, sys.exit)

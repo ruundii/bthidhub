@@ -115,7 +115,7 @@ class BluetoothAdapter:
             await asyncio.sleep(2)
 
         self.alias = DEVICE_NAME
-        self.bluetooth_devices.remove_devices()
+        await self.bluetooth_devices.remove_devices()
         self.bluetooth_devices.add_devices()
         self.initialising_adapter = False
 
@@ -137,11 +137,11 @@ class BluetoothAdapter:
     def interfaces_removed(self, obj_name: str, interfaces: Container[str]) -> None:
         if (obj_name==ADAPTER_OBJECT or obj_name==ROOT_OBJECT):
             self.adapter = None
-            self.bluetooth_devices.remove_devices()
+            asyncio.run_coroutine_threadsafe(self.bluetooth_devices.remove_devices(), loop=self.loop)
             print("Bluetooth adapter removed. Stopping")
             asyncio.run_coroutine_threadsafe(self.init(), loop=self.loop)
         elif INPUT_HOST_INTERFACE in interfaces or INPUT_DEVICE_INTERFACE in interfaces:
-            self.bluetooth_devices.remove_device(obj_name)
+            asyncio.run_coroutine_threadsafe(self.bluetooth_devices.remove_device(obj_name), loop=self.loop)
         self.on_interface_changed()
 
     def register_agent(self) -> None:

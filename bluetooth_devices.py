@@ -49,7 +49,7 @@ class BluetoothDevice:
             if self.connected and not self.sockets_connected:
                 await self.connect_sockets()
             elif not self.connected and self.sockets_connected:
-                self.disconnect_sockets()
+                await self.disconnect_sockets()
         except Exception as exc:
             print("Possibly dbus error during reconcile_connected_state ",exc)
 
@@ -89,7 +89,7 @@ class BluetoothDevice:
             await asyncio.sleep(1)
             asyncio.run_coroutine_threadsafe(self.connect_sockets(), loop=self.loop)
 
-    def disconnect_sockets(self) -> None:
+    async def disconnect_sockets(self) -> None:
         for t in self._tasks:
             t.cancel()
             with suppress(asyncio.CancelledError):
@@ -119,7 +119,7 @@ class BluetoothDevice:
                 print("Cannot read data from socket. ", self.object_path ,"Closing sockets")
                 if self is not None:
                     try:
-                        self.disconnect_sockets()
+                        await self.disconnect_sockets()
                     except:
                         print("Error while disconnecting sockets")
                 print("Arranging reconnect")
@@ -154,12 +154,12 @@ class BluetoothDevice:
         if self.device_registry.on_devices_changed_handler is not None:
             asyncio.run_coroutine_threadsafe(self.device_registry.on_devices_changed_handler(), loop=self.loop)
 
-    def finalise(self) -> None:
+    async def finalise(self) -> None:
         self.props.PropertiesChanged.disconnect(self.device_connected_state_changed)
         self.control_socket_path = None
         self.interrupt_socket_path = None
         # Close sockets
-        self.disconnect_sockets()
+        await self.disconnect_sockets()
         print("BT Device ",self.object_path," finalised")
 
 
@@ -223,13 +223,13 @@ class BluetoothDeviceRegistry:
         stdout, stderr = await proc.communicate()
         return any("SLAVE" in l and device_address in l for l in stdout.decode().split("\n"))
 
-    def remove_devices(self) -> None:
+    async def remove_devices(self) -> None:
         print("Removing all BT devices")
         while len(self.all) >0:
-            self.remove_device(list(self.all)[0])
+            await self.remove_device(list(self.all)[0])
 
 
-    def remove_device(self, device_object_path: str) -> None:
+    async def remove_device(self, device_object_path: str) -> None:
         if device_object_path not in self.all:
             return  # No such device
         device = self.all[device_object_path]
@@ -237,7 +237,7 @@ class BluetoothDeviceRegistry:
         list = self.connected_hosts if device.is_host else self.connected_devices
         if device in list:
             list.remove(device)
-        device.finalise()
+        await device.finalise()
         del device
 
     def switch_host(self) -> None:
@@ -262,7 +262,7 @@ class BluetoothDeviceRegistry:
                 print("Cannot send data to socket of ",target.object_path,". Closing")
                 if target is not None:
                     try:
-                        target.disconnect_sockets()
+                        asyncio.run_coroutine_threadsafe(target.disconnect_sockets(), loop=self.loop)
                     except:
                         print("Error while trying to disconnect sockets")
                 asyncio.run_coroutine_threadsafe(target.reconcile_connected_state(1), loop=self.loop)

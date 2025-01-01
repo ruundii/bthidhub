@@ -55,7 +55,7 @@ class _DeviceConfig(TypedDict, total=False):
     capture: bool
     descriptor: str
     filter: str
-    mapped_ids: dict[str, int]
+    mapped_ids: dict[Optional[str], int]
 
 
 DEVICES_CONFIG_FILE_NAME = 'devices_config.json'
@@ -96,7 +96,7 @@ def _IOC_HIDIOCGRDESCSIZE(length: int) -> int:
 def _ioctl_desc_size(fd: int) -> tuple[int]:
     size = struct.calcsize("i")
     abs = fcntl.ioctl(fd, _IOC_HIDIOCGRDESCSIZE(size), size * b"\x00")
-    return struct.unpack("i", abs)
+    return cast(tuple[int], struct.unpack("i", abs))
 
 def _IOC_HIDIOCGRDESC(length: int) -> int:
     return _IORH(0x02, length)
@@ -107,7 +107,7 @@ def _HIDIOCGRDESC(fd: int) -> "array.array[int]":
 
     _buffer = array.array("B", struct.pack("i", size) + bytes(4096))
     fcntl.ioctl(fd, _IOC_HIDIOCGRDESC(struct.calcsize("I4096c")), _buffer)
-    (size,) = struct.unpack("i", _buffer[:4])
+    (size,) = cast(tuple[int], struct.unpack("i", _buffer[:4]))
     return _buffer[4 : size + 4]
 
 
@@ -135,7 +135,7 @@ class HIDDevice:
         print("HID Device ",self.device_id," created")
         desc = "".join(f"{b:02x}" for b in _HIDIOCGRDESC(self.hidraw_file))
         # Replace report IDs, so they can be remapped later.
-        self.internal_ids = tuple(m[1] for m in REPORT_ID_PATTERN.findall(desc))
+        self.internal_ids = tuple(cast(str, m[1]) for m in REPORT_ID_PATTERN.findall(desc))
         self.descriptor, found = REPORT_ID_PATTERN.subn(r"\1{}", desc)
         # Or insert one if no report ID exists.
         if found == 0:
@@ -332,7 +332,7 @@ class HIDDeviceRegistry:
             dev_config["descriptor"] = hid_dev.descriptor
             # TODO(PY311): Use to_bytes() defaults.
             # Need tuple to retain order (set is unordered, but dict is ordered).
-            keys = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else {None}
+            keys = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else (None,)
             if dev_config.get("mapped_ids", {}).keys() != set(keys):
                 dev_config["mapped_ids"] = {i: 0 for i in keys}
                 recreate_sdp = True
@@ -358,7 +358,7 @@ class HIDDeviceRegistry:
         # Update the mapped IDs based on latest information.
         for hid_dev in self.capturing_devices.values():
             config_ids = self.devices_config[hid_dev.device_class]["mapped_ids"]
-            dev.mapped_ids = {k: v.to_bytes(1, "big") for k,v in config_ids.items()}
+            hid_dev.mapped_ids = {k: v.to_bytes(1, "big") for k,v in config_ids.items()}
         self.devices = devs
 
 

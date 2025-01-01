@@ -3,6 +3,7 @@
 import asyncio
 import socket
 import os
+from concurrent.futures import Future
 from contextlib import suppress
 from subprocess import DEVNULL, PIPE
 from typing import Awaitable, Callable, Optional, TYPE_CHECKING
@@ -38,7 +39,7 @@ class BluetoothDevice:
         self.interrupt_socket_path: Optional[str] = interrupt_socket_path
         self.interrupt_socket: Optional[socket.socket] = None
         self.sockets_connected = False
-        self._tasks: set[asyncio.Future[None]] = set()
+        self._tasks: set[Future[None]] = set()
 
         print("BT Device ",object_path," created")
         asyncio.run_coroutine_threadsafe(self.reconcile_connected_state(1), loop=self.loop)

@@ -10,6 +10,7 @@ import json
 import re
 import struct
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Awaitable, Callable, Literal, Optional, TypedDict, cast
@@ -94,13 +95,13 @@ def _IOC_HIDIOCGRDESCSIZE(length: int) -> int:
 
 def _ioctl_desc_size(fd: int) -> tuple[int]:
     size = struct.calcsize("i")
-    abs = fcntl.ioctl(fd, _IOC_HIDIOCGRDESCSIZE(size), size * "\x00")
+    abs = fcntl.ioctl(fd, _IOC_HIDIOCGRDESCSIZE(size), size * b"\x00")
     return struct.unpack("i", abs)
 
 def _IOC_HIDIOCGRDESC(length: int) -> int:
     return _IORH(0x02, length)
 
-def _HIDIOCGRDESC(fd: int) -> array.array:
+def _HIDIOCGRDESC(fd: int) -> "array.array[int]":
     """Get report descriptor."""
     size = int(*_ioctl_desc_size(fd))
 
@@ -112,6 +113,8 @@ def _HIDIOCGRDESC(fd: int) -> array.array:
 
 
 class HIDDevice:
+    mapped_ids: dict[int, bytes]
+
     def __init__(self, device: _Device, filter: HIDMessageFilter,
                  loop: asyncio.AbstractEventLoop, device_registry: HIDDeviceRegistry):
         self.loop = loop
@@ -187,7 +190,7 @@ class HIDDevice:
 
     async def send_message(self, msg: bytes) -> None:
         if self.hidraw_file is not None:
-            os.write(self.hidraw_file, tm[1:])
+            os.write(self.hidraw_file, msg[1:])
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, HIDDevice):
@@ -319,17 +322,17 @@ class HIDDeviceRegistry:
 
         recreate_sdp = False
         # Refresh or create config details for currently connected devices.
-        for dev in self.capturing_devices.values():
-            dev_config = self.devices_config.get(dev.device_class)
+        for hid_dev in self.capturing_devices.values():
+            dev_config = self.devices_config.get(hid_dev.device_class)
             if not dev_config:
                 dev_config = {}
-                self.devices_config[dev.device_class] = dev_config
+                self.devices_config[hid_dev.device_class] = dev_config
                 recreate_sdp = True
 
-            dev_config["descriptor"] = dev.descriptor
+            dev_config["descriptor"] = hid_dev.descriptor
             # TODO(PY311): Use to_bytes() defaults.
             # Need tuple to retain order (set is unordered, but dict is ordered).
-            keys = tuple(int(i, base=16) for i in dev.internal_ids) if dev.internal_ids else {None}
+            keys = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else {None}
             if dev_config.get("mapped_ids", {}).keys() != set(keys):
                 dev_config["mapped_ids"] = {i: 0 for i in keys}
                 recreate_sdp = True
@@ -353,8 +356,8 @@ class HIDDeviceRegistry:
             subprocess.Popen(("systemctl", "restart", "bluetooth"), stderr=sys.stderr)
 
         # Update the mapped IDs based on latest information.
-        for dev in self.capturing_devices.values():
-            config_ids = self.devices_config[dev.device_class]["mapped_ids"]
+        for hid_dev in self.capturing_devices.values():
+            config_ids = self.devices_config[hid_dev.device_class]["mapped_ids"]
             dev.mapped_ids = {k: v.to_bytes(1, "big") for k,v in config_ids.items()}
         self.devices = devs
 

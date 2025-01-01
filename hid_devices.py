@@ -201,7 +201,6 @@ class HIDDeviceRegistry:
     def __scan_devices(self) -> None:
         #input_devices
         self.input_devices = []
-        evdevs = [evdev.InputDevice(path) for path in evdev.list_devices()]
 
         def _filter(d: evdev.InputDevice) -> bool:
             """Filter out devices without key capability and without esc button."""
@@ -316,10 +315,7 @@ class HIDDeviceRegistry:
     def get_hid_devices_with_config(self) -> _HIDDevices:
         for device in self.devices:
             if device["id"] in self.devices_config:
-                if CAPTURE_ELEMENT in self.devices_config[device["id"]]:
-                    device[CAPTURE_ELEMENT] = self.devices_config[device["id"]][CAPTURE_ELEMENT]
-                else:
-                    device[CAPTURE_ELEMENT] = False
+                device[CAPTURE_ELEMENT] = self.devices_config[device["id"]].get(CAPTURE_ELEMENT, False)
                 if FILTER_ELEMENT in self.devices_config[device["id"]]:
                     device[FILTER_ELEMENT] =  self.devices_config[device["id"]][FILTER_ELEMENT]
         return {"devices": self.devices, "filters": FILTERS, "input_devices": self.input_devices}

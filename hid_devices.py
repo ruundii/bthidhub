@@ -20,7 +20,7 @@ from watchfiles import awatch
 from bluetooth_devices import BluetoothDeviceRegistry
 from compatibility_device import CompatibilityModeDevice
 
-HIDMessageFilter = Callable[[bytes], bytes | None]
+HIDMessageFilter = Callable[[bytes], Optional[bytes]]
 
 
 class __Device(TypedDict, total=False):

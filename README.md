@@ -20,9 +20,9 @@ either find an older release or test and fix the install script (and then send u
 1) Flash Raspberry Pi OS (32-bit) Lite (https://www.raspberrypi.org/downloads/raspberry-pi-os/) to an SD card.
 2) If you didn't configure user, network and SSH via the Pi Imager, then mount the SD card as a drive.
 
-  a) Copy wpa_supplicant.conf, ssh and userconf files from the install/ directory to the root of the boot partition.
-  b) Update Wifi network/password in wpa_supplicant.conf.
-  c) Optionally, update username/password in userconf (A password hash can be produced with: `echo 'mypassword' | openssl passwd -6 -stdin`).
+  * Copy wpa_supplicant.conf, ssh and userconf files from the install/ directory to the root of the boot partition.
+  * Update Wifi network/password in wpa_supplicant.conf.
+  * Optionally, update username/password in userconf (A password hash can be produced with: `echo 'mypassword' | openssl passwd -6 -stdin`).
 
 4) Plug SD card into the RPi and start it.
 5) Get the IP address of the newly booted RPi.

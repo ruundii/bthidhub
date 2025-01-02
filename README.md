@@ -64,13 +64,14 @@ To upgrade to the latest release without reinstalling from scratch, you'll need 
 (as done in the install instructions). Then run:
 
 ```
-cd /home/pi/bthidhub/
+cd $HOME/bthidhub/
 git pull
+sudo pip3 install -r requirements.txt
 mypyc
 sudo systemctl restart remapper
 ```
 
-The `mypyc` command may take several minutes to an hour to run, but will optimise the performance.
+The `mypyc` command may take upto 20 mins, but will help optimise the performance.
 
 Additionally, you should check if there were any changes in the install/ directory
 (https://github.com/ruundii/bthidhub/commits/master/install).

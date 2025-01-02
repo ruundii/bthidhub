@@ -139,7 +139,7 @@ class HIDDevice:
         self.descriptor, found = REPORT_ID_PATTERN.subn(r"\1{}", desc)
         # Or insert one if no report ID exists.
         if found == 0:
-            self.descriptor = re.sub(r"(a101)", r"\185{}", self.descriptor, count=1)
+            self.descriptor = re.sub(r"(a101)", r"\g<1>85{}", self.descriptor, count=1)
 
     def set_device_filter(self, filter: HIDMessageFilter) -> None:
         self.filter = filter

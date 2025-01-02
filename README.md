@@ -17,15 +17,15 @@ essentially acting as a proxy. This has been tested on a **Raspberry Pi Zero W**
 The install script is for the bullseye release. If a newer version of Raspberry Pi OS is available you can
 either find an older release or test and fix the install script (and then send us a PR with the fixes).
 
-1) Flash Raspberry Pi OS (32-bit) Lite (https://www.raspberrypi.org/downloads/raspberry-pi-os/) to an SD card.
-2) If you didn't configure user, network and SSH via the Pi Imager, then mount the SD card as a drive.
+1. Flash Raspberry Pi OS (32-bit) Lite (https://www.raspberrypi.org/downloads/raspberry-pi-os/) to an SD card.
+2. If you didn't configure user, network and SSH via the Pi Imager, then mount the SD card as a drive.
 
   * Copy wpa_supplicant.conf, ssh and userconf files from the install/ directory to the root of the boot partition.
   * Update Wifi network/password in wpa_supplicant.conf.
   * Optionally, update username/password in userconf (A password hash can be produced with: `echo 'mypassword' | openssl passwd -6 -stdin`).
 
-4) Plug SD card into the RPi and start it.
-5) Get the IP address of the newly booted RPi.
+3. Plug SD card into the RPi and start it.
+4. Get the IP address of the newly booted RPi.
 
 Windows:
   5) Install putty: https://www.putty.org/

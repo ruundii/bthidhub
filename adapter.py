@@ -40,7 +40,7 @@ UUID = '00001124-0000-1000-8000-00805f9b34fb'
 
 
 class BluetoothAdapter:
-    adapter: Optional[InterfaceProxy]
+    adapter: Optional[InterfaceProxy] = None
 
     def __init__(self, bus: SystemMessageBus, loop: asyncio.AbstractEventLoop,
                  bluetooth_devices: BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):

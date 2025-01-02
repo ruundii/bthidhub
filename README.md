@@ -50,7 +50,7 @@ should appear as a 'Paired Host'.
 <img src="bt-hid-hub-bt-devices.png" width="500" alt="Bluetooth devices screen"/>
 
 Back on the HID devices tab, you should see all the currently connected devices (wired and BT).
-Click the capture checkbox for each device you want to start proxying events to.
+Click the capture checkbox for each device you want to start proxying events from.
 Note that the BT will restart each time a new device is enabled.
 
 <img src="bt-hid-hub-devices.png" width="500" alt="HID devices screen"/>

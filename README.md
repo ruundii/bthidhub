@@ -40,7 +40,7 @@ Linux/Mac:
 That last step could take an hour to complete.
 When the RPi reboots, the LED will switch off once the service is ready to use.
 
-Finally, go to the [rpi-ip-address]:8080 for the web configuration interface.
+Finally, go to http://[rpi-ip-address]:8080 for the web configuration interface.
 
 ## Usage
 

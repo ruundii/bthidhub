@@ -31,6 +31,7 @@ Windows:
   5. Install putty: https://www.putty.org/
   6. Edit install_windows.bat and update the IP address and password.
   7. Run install_windows.bat, follow prompts until complete.
+
 Linux/Mac:
 
   5. Run: ``ssh pi@[rpi-ip-address] 'bash -s' < setup.sh``

@@ -15,7 +15,7 @@ essentially acting as a proxy. This has been tested on a **Raspberry Pi Zero W**
 ## Install Instructions
 
 The install script is for the bullseye release. If a newer version of Raspberry Pi OS is available you can
-either find an older release and test and fix the install script (and then send us a PR with the fixes).
+either find an older release or test and fix the install script (and then send us a PR with the fixes).
 
 1) Flash Raspberry Pi OS (32-bit) Lite (https://www.raspberrypi.org/downloads/raspberry-pi-os/) to an SD card.
 2) If you didn't configure user, network and SSH via the Pi Imager, then mount the SD card as a drive.

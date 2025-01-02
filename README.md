@@ -23,16 +23,17 @@ either find an older release or test and fix the install script (and then send u
   * Copy wpa_supplicant.conf, ssh and userconf files from the install/ directory to the root of the boot partition.
   * Update Wifi network/password in wpa_supplicant.conf.
   * Optionally, update username/password in userconf (A password hash can be produced with: `echo 'mypassword' | openssl passwd -6 -stdin`).
-
 3. Plug SD card into the RPi and start it.
 4. Get the IP address of the newly booted RPi.
 
 Windows:
-  5) Install putty: https://www.putty.org/
-  6) Edit install_windows.bat and update the IP address and password.
-  7) Run install_windows.bat, follow prompts until complete.
+
+  5. Install putty: https://www.putty.org/
+  6. Edit install_windows.bat and update the IP address and password.
+  7. Run install_windows.bat, follow prompts until complete.
 Linux/Mac:
-  5) Run: ``ssh pi@[rpi-ip-address] 'bash -s' < setup.sh``
+
+  5. Run: ``ssh pi@[rpi-ip-address] 'bash -s' < setup.sh``
      Password, if not change above, is 'raspberry'.
 
 That last step could take an hour to complete.

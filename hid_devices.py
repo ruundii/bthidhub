@@ -336,7 +336,7 @@ class HIDDeviceRegistry:
             dev_config["descriptor"] = hid_dev.descriptor
             # TODO(PY311): Use to_bytes() defaults.
             # Need tuple to retain order (set is unordered, but dict is ordered).
-            keys = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else ("_",)
+            keys: tuple[Union[int, Literal["_"]], ...] = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else ("_",)
             if dev_config.get("mapped_ids", {}).keys() != set(keys):
                 dev_config["mapped_ids"] = {i: 0 for i in keys}
                 recreate_sdp = True

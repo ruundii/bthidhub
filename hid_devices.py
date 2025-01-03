@@ -416,8 +416,8 @@ class HIDDeviceRegistry:
         if device_id in self.devices_config:
             if FILTER_ELEMENT in self.devices_config[device_id]:
                 filter_id = self.devices_config[device_id][FILTER_ELEMENT]
-                return FILTER_INSTANCES[filter_id]["func"]
-        return FILTER_INSTANCES["_"]["func"]
+                return FILTERS[filter_id]["func"]
+        return FILTERS["_"]["func"]
 
     def get_hid_devices_with_config(self) -> _HIDDevices:
         for device in self.devices:

@@ -59,17 +59,17 @@ b7 09 cd 09 e2 09 e9 09 ea 81 02 95 01 81 01 c0 05 01 09 02 a1 01 09 01 a1 00 85
 13 15 00 26 ff 00 09 02 81 00 09 02 91 00 c0
 N: Bluetooth HID Hub - RPi
 I: 5 1d6b 0246
-# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
+# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0
 E: 000000.000000 16 04 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00
-# ReportID: 4 / Button: 1 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 
+# ReportID: 4 / Button: 1 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0
 E: 000000.000698 16 04 01 00 00 00 00 00 00 01 01 00 00 00 00 00 00
-# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
+# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0
 E: 000000.001094 16 04 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00
-# ReportID: 4 / Button: 1 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0 
+# ReportID: 4 / Button: 1 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 1 , 0 , 0 , 0 , 0 , 0 , 0
 E: 000000.001470 16 04 01 00 00 00 00 00 00 01 01 00 00 00 00 00 00
-# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
+# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0
 E: 000000.001878 16 04 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00
-# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 
+# ReportID: 4 / Button: 0 0 0 0 0 0 0 0 | X: 0 | Y: 0 | Wheel: 0 | 0xcff00: 0 | Vendor Usage 1: 1 , 0 , 0 , 0 , 0 , 0 , 0 , 0
 E: 000000.044655 16 04 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00
 ```
 
@@ -77,7 +77,7 @@ One difference is that the ReportID has been changed from 1 to 4 on each event.
 This is needed for the RPi to be able to handle multiple devices. This is not the cause.
 
 If we save the above output to a file, then we can repeat the event with ``hid-replay my-recording.hid``.
-This allows use to change parts and test them out.
+This allows us to change parts and test them out.
 
 Through trial and error we can figure out that the double-click only works when the vendor ID (middle value under ``I:``) is set to ``0b33``.
 This is the ID for Contour and it suggests that there is vendor-specific code in the kernel to make this button work. Not helpful...
@@ -99,54 +99,101 @@ Hmm, it seems like the double-click actually sends 2 clicks of a different butto
 What if we change the ``80`` to ``01``, so we actually send 2 left-click events?
 Running that through ``hid-replay``, it works!
 
-However, if you just change that on the RPi, we later find it still does not work.
-Through more trial and error, comparing working/non-working events we can also figure out that the 2 left-click events
-only get interpreted as a double-click if there's a gap between the events of atleast around 25ms (the first number after
-``E:`` is a timestamp of the event).
+## Writing a filter
 
-## Implementing the fix
-
-To implement the fix we need to create a new filter class in the bthidhub repo.
-While ssh'd into the RPi, I've created ``bthidhub/contour_message_filter.py``:
+To implement the fix we need to create a new filter function.
+While ssh'd into the RPi, create the new file: ``bthidhub/filters/contour.py``:
 
 ```
+"""Contour Rollermouse"""
+
+def message_filter(msg: bytes) -> bytes:
+    if len(msg) >= 10 and msg[9] == 0x80:
+        # Convert vendor specific double click (button 0x80), to normal double click (button 1).
+        msg = msg[:9] + (b"\x01" if msg[1] else b"\x00") + msg[10:]
+    return msg
+```
+
+The docstring on the first line can be used to customise the name in the UI.
+If omitted, the name will be based on the filename.
+Each module in the filters directory must define a function named ``message_filter``.
+This function will be automatically imported and available as a filter.
+
+The above filter function changes the byte sequence for the double click button, so it
+looks like regular single clicks.
+
+Restart the service:
+``sudo systemctl restart remapper``
+
+After a few seconds, refresh the web page and you should see the new filter in the dropdown
+options. Select the new filter and it will immediately be applied to all events from that
+device.
+
+If you add ``print()`` calls for debugging, you can view the logs with:
+``journalctl -xeu remapper``
+
+### Using clases to store state
+
+With the above code, it seems that the double click is only getting recognised as a single
+click. Through more trial and error, comparing working/non-working events we can also
+figure out that the 2 left-click events only get interpreted as a double-click if there's
+a gap between the events of atleast around 25ms (the first number after ``E:`` is a
+timestamp of the event).
+
+To emulate this, we can create a class to store a boolean state and then sleep for 25ms in
+the middle of the double click events. A complete filter for this might look like:
+
+```
+"""Contour Rollermouse"""
+
 import time
-from typing import Optional
 
-from hid_message_filter import HIDMessageFilter
-
-class ContourMessageFilter(HIDMessageFilter):
+class ContourMessageFilter:
     delay = False
 
-    def filter_message_to_host(self, msg: bytes) -> Optional[bytes]:
+    def filter_message(self, msg: bytes) -> bytes:
         if len(msg) >= 10 and msg[9] == 0x80:
             # Convert vendor specific double click (button 0x80), to normal double click (button 1).
-            msg = msg[:9] + (b'\x01' if msg[1] else b'\x00') + msg[10:]
+            msg = msg[:9] + (b"\x01" if msg[1] else b"\x00") + msg[10:]
             if msg[1]:
                 # Ensure a small delay between click events otherwise it won't register as a double click.
                 if self.delay:
                     time.sleep(0.025)
                 self.delay = not self.delay
-        return b'\xa1' + (msg[0] + 3).to_bytes(1, 'big') + msg[1:]
+        return msg
+
+message_filter = ContourMessageFilter().filter_message
 ```
 
-The above code converts that pesky ``80`` to a ``01`` and forces a 25ms gap between the 2 click events.
+Note the last line which assigns the bound method to the ``message_filter`` name, so it
+can still be imported the same way as our first example.
 
-We also need to patch this into ``hid_devices.py`` by updating these lines:
+### Suppressing events
+
+If you want to block some messages from being sent entirely, instead of returning the
+message, simply ``return None``.
+
+You will need to change the return type annotation in this case to ``-> bytes | None:``.
+
+### Compiling for maximum performance
+
+Once you have your filters working correctly, you can compile the code to ensure
+maximum performance. Simply run:
+
 ```
-from contour_message_filter import ContourMessageFilter
-FILTERS = [
-    {"id":"Default", "name":"Default"},
-    {"id":"Mouse", "name":"Mouse"},
-    {"id":"A1314", "name":"A1314"},
-    {"id":"Contour", "name":"Contour"}
-]
-FILTER_INSTANCES = {
-"Default" : HIDMessageFilter(), "Mouse":MouseMessageFilter(), "A1314":A1314MessageFilter(),
-"Contour": ContourMessageFilter(),
-}
+cd $HOME/bthidhub/
+mypyc
 ```
 
-Then we can select the "Contour" option in the web interface in order to enable the filter.
+This may take upto 20 mins to complete.
 
-The same techniques can be used to remap events when you just want to change the behaviour of a device.
+## Notes
+
+The same techniques could be used to remap events when you just want to change
+the behaviour of a device.
+
+[This post](http://who-t.blogspot.com/2018/12/understanding-hid-report-descriptors.html)
+is super helpful in getting your head around HID descriptors.
+
+If you have a report descriptor and don't want to use hid-tools to decode, an online parser is:
+https://eleccelerator.com/usbdescreqparser/

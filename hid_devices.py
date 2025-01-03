@@ -5,6 +5,7 @@ from __future__ import annotations
 import array
 import asyncio
 import fcntl
+import importlib
 import os
 import json
 import re
@@ -47,7 +48,7 @@ class _InputDevice(TypedDict):
 
 class _HIDDevices(TypedDict):
     devices: list[_Device]
-    filters: tuple[dict[str, str]]
+    filters: tuple[dict[str, str], ...]
     input_devices: list[_InputDevice]
 
 
@@ -58,16 +59,27 @@ class _DeviceConfig(TypedDict, total=False):
     mapped_ids: dict[Union[int, Literal["_"]], int]
 
 
+class FilterDict(TypedDict):
+    name: str
+    func: HIDMessageFilter
+
+
 DEVICES_CONFIG_FILE_NAME = 'devices_config.json'
 DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY = 'compatibility_devices'
 CAPTURE_ELEMENT: Literal['capture'] = 'capture'
 FILTER_ELEMENT: Literal['filter'] = 'filter'
+FILTERS_PATH = Path(__file__).parent / "filters"
 REPORT_ID_PATTERN = re.compile(r"(a10185)(..)")
 SDP_TEMPLATE_PATH = Path(__file__).with_name("sdp_record_template.xml")
 SDP_OUTPUT_PATH = Path("/etc/bluetooth/sdp_record.xml")
 
-FILTERS = ({"id": "_", "name": "No filter"},)
-FILTER_INSTANCES: dict[str, HIDMessageFilter] = {"_": lambda m: m}
+FILTERS: dict[str, FilterDict] = {"_": {"name": "No filter", "func": lambda m: m}}
+for mod_path in FILTERS_PATH.glob("*.py"):
+    if mod_path.stem == "__init__":
+        continue
+    mod = importlib.import_module("filters." + mod_path.stem)
+    name = mod.__doc__ or mod_path.stem.replace("_", " ").capitalize()
+    FILTERS[mod_path.stem] = {"name": name, "func": mod.message_filter}
 
 
 # https://github.com/bentiss/hid-tools/blob/59a0c4b153dbf7d443e63bf68ff830b8353f5f7a/hidtools/hidraw.py#L33-L104
@@ -404,8 +416,8 @@ class HIDDeviceRegistry:
         if device_id in self.devices_config:
             if FILTER_ELEMENT in self.devices_config[device_id]:
                 filter_id = self.devices_config[device_id][FILTER_ELEMENT]
-                return FILTER_INSTANCES[filter_id]
-        return FILTER_INSTANCES["_"]
+                return FILTER_INSTANCES[filter_id]["func"]
+        return FILTER_INSTANCES["_"]["func"]
 
     def get_hid_devices_with_config(self) -> _HIDDevices:
         for device in self.devices:
@@ -413,4 +425,5 @@ class HIDDeviceRegistry:
                 device[CAPTURE_ELEMENT] = self.devices_config[device["id"]].get(CAPTURE_ELEMENT, False)
                 if FILTER_ELEMENT in self.devices_config[device["id"]]:
                     device[FILTER_ELEMENT] =  self.devices_config[device["id"]][FILTER_ELEMENT]
-        return {"devices": self.devices, "filters": FILTERS, "input_devices": self.input_devices}
+        f = tuple({"id": k, "name": v["name"]} for k,v in FILTERS.items())
+        return {"devices": self.devices, "filters": f, "input_devices": self.input_devices}

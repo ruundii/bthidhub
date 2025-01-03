@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Awaitable, Callable, Literal, Optional, TypedDict, cast
+from typing import Awaitable, Callable, Literal, Optional, TypedDict, Union, cast
 
 import evdev
 from watchfiles import awatch
@@ -113,7 +113,7 @@ def _HIDIOCGRDESC(fd: int) -> "array.array[int]":
 
 
 class HIDDevice:
-    mapped_ids: dict[Optional[int], bytes]
+    mapped_ids: dict[Union[int, Literal["_"]], bytes]
 
     def __init__(self, device: _Device, filter: HIDMessageFilter,
                  loop: asyncio.AbstractEventLoop, device_registry: HIDDeviceRegistry):

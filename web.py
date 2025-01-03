@@ -35,7 +35,7 @@ class PiAuthorizationPolicy(AbstractAuthorizationPolicy):
         return identity == PI_USER
 
 class Web:
-    def __init__(self, loop: asyncio.AbstractEventLoop, adapter, bluetooth_devices:BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):
+    def __init__(self, loop: asyncio.AbstractEventLoop, adapter, bluetooth_devices: BluetoothDeviceRegistry, hid_devices: HIDDeviceRegistry):
         self.loop = loop
         self.adapter = adapter
         self.adapter.set_on_agent_action_handler(self.on_agent_action)
@@ -107,7 +107,7 @@ class Web:
         await self.site.start()
 
     async def root_handler(self, request):
-        return web.HTTPFound('/index.html')
+        raise web.HTTPFound('/index.html')
 
     async def change_password_handler(self, request):
         await check_authorized(request)
@@ -115,9 +115,9 @@ class Web:
         current_password = data['current_password']
         new_password = data['new_password']
         if not is_valid_current_password(PI_USER, current_password):
-            return web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized()
         if not set_new_password(PI_USER, new_password):
-            return web.HTTPError
+            raise web.HTTPError
         return web.Response(text="Password successfully changed")
 
     async def restart_service_handler(self, request):
@@ -162,7 +162,7 @@ class Web:
         try:
             self.adapter.start_scan()
         except Exception as exc:
-            return web.HTTPError(reason=str(exc))
+            raise web.HTTPError(reason=str(exc))
         return web.Response()
 
     async def stop_scanning(self, request):
@@ -170,7 +170,7 @@ class Web:
         try:
             self.adapter.stop_scan()
         except Exception as exc:
-            return web.HTTPError(reason=str(exc))
+            raise web.HTTPError(reason=str(exc))
         return web.Response()
 
 
@@ -179,7 +179,7 @@ class Web:
         try:
             self.adapter.start_discoverable()
         except Exception as exc:
-            return web.HTTPError(reason=str(exc))
+            raise web.HTTPError(reason=str(exc))
         return web.Response()
 
     async def stop_discoverable(self, request):
@@ -187,7 +187,7 @@ class Web:
         try:
             self.adapter.stop_discoverable()
         except Exception as exc:
-            return web.HTTPError(reason=str(exc))
+            raise web.HTTPError(reason=str(exc))
         return web.Response()
 
     async def get_bluetooth_devices(self, request):

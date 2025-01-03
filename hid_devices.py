@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Awaitable, Callable, Literal, Optional, TypedDict, cast
+from typing import Awaitable, Callable, Literal, Optional, TypedDict, Union, cast
 
 import evdev
 from watchfiles import awatch
@@ -31,7 +31,7 @@ class __Device(TypedDict, total=False):
 
 class _Device(__Device):
     id: str
-    instance: str
+    device_class: str
     name: str
     hidraw: str
     events: list[str]
@@ -47,7 +47,7 @@ class _InputDevice(TypedDict):
 
 class _HIDDevices(TypedDict):
     devices: list[_Device]
-    filters: tuple[dict[str, Optional[str]]]
+    filters: tuple[dict[str, str]]
     input_devices: list[_InputDevice]
 
 
@@ -55,7 +55,7 @@ class _DeviceConfig(TypedDict, total=False):
     capture: bool
     descriptor: str
     filter: str
-    mapped_ids: dict[Optional[int], int]
+    mapped_ids: dict[Union[int, Literal["_"]], int]
 
 
 DEVICES_CONFIG_FILE_NAME = 'devices_config.json'
@@ -66,8 +66,8 @@ REPORT_ID_PATTERN = re.compile(r"(a10185)(..)")
 SDP_TEMPLATE_PATH = Path(__file__).with_name("sdp_record_template.xml")
 SDP_OUTPUT_PATH = Path("/etc/bluetooth/sdp_record.xml")
 
-FILTERS = ({"id": None, "name": "No filter"},)
-FILTER_INSTANCES: dict[str | None, HIDMessageFilter] = {None: lambda m: m}
+FILTERS = ({"id": "_", "name": "No filter"},)
+FILTER_INSTANCES: dict[str, HIDMessageFilter] = {"_": lambda m: m}
 
 
 # https://github.com/bentiss/hid-tools/blob/59a0c4b153dbf7d443e63bf68ff830b8353f5f7a/hidtools/hidraw.py#L33-L104
@@ -113,15 +113,15 @@ def _HIDIOCGRDESC(fd: int) -> "array.array[int]":
 
 
 class HIDDevice:
-    mapped_ids: dict[Optional[int], bytes]
+    mapped_ids: dict[Union[int, Literal["_"]], bytes]
 
     def __init__(self, device: _Device, filter: HIDMessageFilter,
                  loop: asyncio.AbstractEventLoop, device_registry: HIDDeviceRegistry):
         self.loop = loop
         self.filter = filter
         self.device_registry = device_registry
-        self.device_id = device["instance"]
-        self.device_class = device["id"]
+        self.device_id = device["id"]
+        self.device_class = device["device_class"]
         self.name = device["name"]
         self.hidraw = device["hidraw"]
         self.events = device["events"]
@@ -163,8 +163,10 @@ class HIDDevice:
             self.device_registry.bluetooth_devices.switch_host()
             self.indicate_switch_with_mouse_movement()
         else:
-            # TODO: Test a device without report IDs.
-            tm = b"\xa1" + self.mapped_ids[tm[0]] + tm[1:]
+            if self.internal_ids:
+                tm = b"\xa1" + self.mapped_ids[tm[0]] + tm[1:]
+            else:
+                tm = b"\xa1" + self.mapped_ids["_"] + tm
             self.device_registry.bluetooth_devices.send_message(tm, True, False)
 
     def indicate_switch_with_mouse_movement(self) -> None:
@@ -297,9 +299,11 @@ class HIDDeviceRegistry:
                                         break
                             events.extend(input_events)
 
-                        id = device.split('.')[0]
-                        devs.append({"id":id, "instance":device, "name":name, "hidraw": hidraw, "events":events, "compatibility_mode":compatibility_mode})
-                        devs_dict[device] = id
+                        device_class = device.split(".")[0]
+                        devs.append({"id": device, "device_class": device_class,
+                                     "name": name, "hidraw": hidraw, "events": events,
+                                     "compatibility_mode": compatibility_mode})
+                        devs_dict[device] = device_class
                         if compatibility_mode: devs_in_compatibility_mode.append(device)
             except Exception as exc:
                 print("Error while loading HID device: ", device, ", Error: ", exc,", Skipping.")
@@ -316,23 +320,23 @@ class HIDDeviceRegistry:
             del hid_device
 
         for dev_dict in devs:
-            if dev_dict["instance"] not in self.capturing_devices and self.__is_configured_capturing_device(dev_dict["id"]) and dev_dict["instance"] not in devs_in_compatibility_mode:
+            if dev_dict["id"] not in self.capturing_devices and self.__is_configured_capturing_device(dev_dict["id"]) and dev_dict["id"] not in devs_in_compatibility_mode:
                 #create capturing device
-                self.capturing_devices[dev_dict["instance"]] = HIDDevice(dev_dict, self.__get_configured_device_filter(dev_dict["id"]), self.loop, self)
+                self.capturing_devices[dev_dict["id"]] = HIDDevice(dev_dict, self.__get_configured_device_filter(dev_dict["id"]), self.loop, self)
 
         recreate_sdp = False
         # Refresh or create config details for currently connected devices.
         for hid_dev in self.capturing_devices.values():
-            dev_config = self.devices_config.get(hid_dev.device_class)
+            dev_config = self.devices_config.get(hid_dev.device_id)
             if not dev_config:
                 dev_config = {}
-                self.devices_config[hid_dev.device_class] = dev_config
+                self.devices_config[hid_dev.device_id] = dev_config
                 recreate_sdp = True
 
             dev_config["descriptor"] = hid_dev.descriptor
             # TODO(PY311): Use to_bytes() defaults.
             # Need tuple to retain order (set is unordered, but dict is ordered).
-            keys = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else (None,)
+            keys: tuple[Union[int, Literal["_"]], ...] = tuple(int(i, base=16) for i in hid_dev.internal_ids) if hid_dev.internal_ids else ("_",)
             if dev_config.get("mapped_ids", {}).keys() != set(keys):
                 dev_config["mapped_ids"] = {i: 0 for i in keys}
                 recreate_sdp = True
@@ -357,7 +361,7 @@ class HIDDeviceRegistry:
 
         # Update the mapped IDs based on latest information.
         for hid_dev in self.capturing_devices.values():
-            config_ids = self.devices_config[hid_dev.device_class]["mapped_ids"]
+            config_ids = self.devices_config[hid_dev.device_id]["mapped_ids"]
             hid_dev.mapped_ids = {k: v.to_bytes(1, "big") for k,v in config_ids.items()}
         self.devices = devs
 
@@ -373,9 +377,8 @@ class HIDDeviceRegistry:
         self.devices_config[device_id][FILTER_ELEMENT] = filter_id
         self.__save_config()
         filter = self.__get_configured_device_filter(device_id)
-        for dev in self.capturing_devices:
-            if self.capturing_devices[dev].device_class == device_id:
-                self.capturing_devices[dev].set_device_filter(filter)
+        if dev := self.capturing_devices.get(device_id):
+            dev.set_device_filter(filter)
 
     def set_compatibility_device(self, device_path: str, compatibility_state: bool) -> None:
         if DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY not in self.devices_config:
@@ -402,7 +405,7 @@ class HIDDeviceRegistry:
             if FILTER_ELEMENT in self.devices_config[device_id]:
                 filter_id = self.devices_config[device_id][FILTER_ELEMENT]
                 return FILTER_INSTANCES[filter_id]
-        return FILTER_INSTANCES[None]
+        return FILTER_INSTANCES["_"]
 
     def get_hid_devices_with_config(self) -> _HIDDevices:
         for device in self.devices:

@@ -47,7 +47,7 @@ class _InputDevice(TypedDict):
 
 class _HIDDevices(TypedDict):
     devices: list[_Device]
-    filters: tuple[dict[str, Optional[str]]]
+    filters: tuple[dict[str, str]]
     input_devices: list[_InputDevice]
 
 

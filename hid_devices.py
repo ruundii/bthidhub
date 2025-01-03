@@ -55,7 +55,7 @@ class _DeviceConfig(TypedDict, total=False):
     capture: bool
     descriptor: str
     filter: str
-    mapped_ids: dict[Optional[int], int]
+    mapped_ids: dict[Union[int, Literal["_"]], int]
 
 
 DEVICES_CONFIG_FILE_NAME = 'devices_config.json'

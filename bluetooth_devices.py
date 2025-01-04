@@ -240,7 +240,6 @@ class BluetoothDeviceRegistry:
         if device in list:
             list.remove(device)
         await device.finalise()
-        del device
 
     def switch_host(self) -> None:
         self.current_host_index = (self.current_host_index + 1) % len(self.connected_hosts)

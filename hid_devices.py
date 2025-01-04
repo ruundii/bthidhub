@@ -71,7 +71,7 @@ FILTER_ELEMENT: Literal['filter'] = 'filter'
 # TODO: https://github.com/mypyc/mypyc/issues/700
 FILTERS_PATH = Path(".") / "filters"  # Path(__file__).parent
 REPORT_ID_PATTERN = re.compile(r"(a10185)(..)")
-SDP_TEMPLATE_PATH = SDP_TEMPLATE_PATH = Path("sdp_record_template.xml")  # Path(__file__).with_name("sdp_record_template.xml")
+SDP_TEMPLATE_PATH = Path("sdp_record_template.xml")  # Path(__file__).with_name("sdp_record_template.xml")
 SDP_OUTPUT_PATH = Path("/etc/bluetooth/sdp_record.xml")
 
 FILTERS: dict[str, FilterDict] = {"_": {"name": "No filter", "func": lambda m: m}}

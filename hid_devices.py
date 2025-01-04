@@ -32,7 +32,7 @@ class __Device(TypedDict, total=False):
 
 class _Device(__Device):
     id: str
-    device_class: str
+    instance: str
     name: str
     hidraw: str
     events: list[str]
@@ -132,8 +132,8 @@ class HIDDevice:
         self.loop = loop
         self.filter = filter
         self.device_registry = device_registry
-        self.device_id = device["id"]
-        self.device_class = device["device_class"]
+        self.device_id = device["instance"]
+        self.device_class = device["id"]
         self.name = device["name"]
         self.hidraw = device["hidraw"]
         self.events = device["events"]
@@ -311,11 +311,11 @@ class HIDDeviceRegistry:
                                         break
                             events.extend(input_events)
 
-                        device_class = device.split(".")[0]
-                        devs.append({"id": device, "device_class": device_class,
+                        device_id = device.split(".")[0]
+                        devs.append({"id": device_id, "instance": device,
                                      "name": name, "hidraw": hidraw, "events": events,
                                      "compatibility_mode": compatibility_mode})
-                        devs_dict[device] = device_class
+                        devs_dict[device] = device_id
                         if compatibility_mode: devs_in_compatibility_mode.append(device)
             except Exception as exc:
                 print("Error while loading HID device: ", device, ", Error: ", exc,", Skipping.")
@@ -332,17 +332,17 @@ class HIDDeviceRegistry:
             del hid_device
 
         for dev_dict in devs:
-            if dev_dict["id"] not in self.capturing_devices and self.__is_configured_capturing_device(dev_dict["id"]) and dev_dict["id"] not in devs_in_compatibility_mode:
+            if dev_dict["instance"] not in self.capturing_devices and self.__is_configured_capturing_device(dev_dict["id"]) and dev_dict["instance"] not in devs_in_compatibility_mode:
                 #create capturing device
-                self.capturing_devices[dev_dict["id"]] = HIDDevice(dev_dict, self.__get_configured_device_filter(dev_dict["id"]), self.loop, self)
+                self.capturing_devices[dev_dict["instance"]] = HIDDevice(dev_dict, self.__get_configured_device_filter(dev_dict["id"]), self.loop, self)
 
         recreate_sdp = False
         # Refresh or create config details for currently connected devices.
         for hid_dev in self.capturing_devices.values():
-            dev_config = self.devices_config.get(hid_dev.device_id)
+            dev_config = self.devices_config.get(hid_dev.device_class)
             if not dev_config:
                 dev_config = {}
-                self.devices_config[hid_dev.device_id] = dev_config
+                self.devices_config[hid_dev.device_class] = dev_config
                 recreate_sdp = True
 
             dev_config["descriptor"] = hid_dev.descriptor
@@ -373,7 +373,7 @@ class HIDDeviceRegistry:
 
         # Update the mapped IDs based on latest information.
         for hid_dev in self.capturing_devices.values():
-            config_ids = self.devices_config[hid_dev.device_id]["mapped_ids"]
+            config_ids = self.devices_config[hid_dev.device_class]["mapped_ids"]
             hid_dev.mapped_ids = {k: v.to_bytes(1, "big") for k,v in config_ids.items()}
         self.devices = devs
 
@@ -389,8 +389,9 @@ class HIDDeviceRegistry:
         self.devices_config[device_id][FILTER_ELEMENT] = filter_id
         self.__save_config()
         filter = self.__get_configured_device_filter(device_id)
-        if dev := self.capturing_devices.get(device_id):
-            dev.set_device_filter(filter)
+        for dev in self.capturing_devices:
+            if self.capturing_devices[dev].device_class == device_id:
+                self.capturing_devices[dev].set_device_filter(filter)
 
     def set_compatibility_device(self, device_path: str, compatibility_state: bool) -> None:
         if DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY not in self.devices_config:

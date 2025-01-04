@@ -68,9 +68,10 @@ DEVICES_CONFIG_FILE_NAME = 'devices_config.json'
 DEVICES_CONFIG_COMPATIBILITY_DEVICE_KEY = 'compatibility_devices'
 CAPTURE_ELEMENT: Literal['capture'] = 'capture'
 FILTER_ELEMENT: Literal['filter'] = 'filter'
-FILTERS_PATH = Path(__file__).parent / "filters"
+# TODO: https://github.com/mypyc/mypyc/issues/700
+FILTERS_PATH = Path(".") / "filters"  # Path(__file__).parent
 REPORT_ID_PATTERN = re.compile(r"(a10185)(..)")
-SDP_TEMPLATE_PATH = Path(__file__).with_name("sdp_record_template.xml")
+SDP_TEMPLATE_PATH = SDP_TEMPLATE_PATH = Path("sdp_record_template.xml")  # Path(__file__).with_name("sdp_record_template.xml")
 SDP_OUTPUT_PATH = Path("/etc/bluetooth/sdp_record.xml")
 
 FILTERS: dict[str, FilterDict] = {"_": {"name": "No filter", "func": lambda m: m}}
@@ -147,7 +148,7 @@ class HIDDevice:
         print("HID Device ",self.device_id," created")
         desc = "".join(f"{b:02x}" for b in _HIDIOCGRDESC(self.hidraw_file))
         # Replace report IDs, so they can be remapped later.
-        self.internal_ids = tuple(m[1] for m in cast(list[str], REPORT_ID_PATTERN.findall(desc)))
+        self.internal_ids = tuple(m[1] for m in cast(list[tuple[str, str]], REPORT_ID_PATTERN.findall(desc)))
         self.descriptor, found = REPORT_ID_PATTERN.subn(r"\1{}", desc)
         # Or insert one if no report ID exists.
         if found == 0:
